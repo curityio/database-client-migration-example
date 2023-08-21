@@ -7,8 +7,9 @@ A Node.js example to demonstrate the approach for migrating clients from configu
 
 ## Prerequisites
 
-First ensure that you have a deployment of the Curity Identity Server, with working GraphQL endpoints.\
-See the [Database Client Management with GraphQL](https://curity.io/resources/learn/graphql-client-management/) tutorial for details on the technical setup.
+First ensure that you have a working deployment of the Curity Identity Server, with GraphQL endpoints.\
+See the [Database Client Management with GraphQL](https://curity.io/resources/learn/graphql-client-management/) tutorial for details on the technical setup.\
+Also ensure that an up to date version of Node.js is installed.
 
 ## Migration Behavior
 
