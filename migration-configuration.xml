@@ -34,13 +34,16 @@
         <attribute xmlns="https://curity.se/ns/ext-conf/attribute">
           <rule-list>
             <name>database-migration-access</name>
+            <enforcement-restrictions>
+              <require-subject-match>false</require-subject-match>
+            </enforcement-restrictions>
             <rule>
               <name>dbclient-access</name>
               <access-operation>create</access-operation>
               <access-operation>read</access-operation>
               <access-operation>update</access-operation>
               <access-operation>delete</access-operation>
-              <attribute>dbclients.*</attribute>
+              <attribute>dbClient.*</attribute>
               <decision>allow</decision>
             </rule>
             <select-rule-list-when>

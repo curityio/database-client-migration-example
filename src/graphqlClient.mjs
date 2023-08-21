@@ -9,6 +9,7 @@
  * For further information, please contact Curity AB.
  */
 
+import {jsonToGraphQLQuery} from 'json-to-graphql-query';
 import {getResponseErrorMessage, getGraphqlErrorMessage} from './utils.mjs'
 
 export class GraphqlClient {
@@ -43,34 +44,34 @@ export class GraphqlClient {
 
     async saveClient(clientData) {
 
-        if (clientData.client_id !== 'introspect-client') {
+        if (clientData.client_id !== 'web-client') {
             return;
         }
 
-        const data = `
-              mutation createDatabaseClient {
-                createDatabaseClient(input: {
-                fields: ${JSON.stringify(clientData)} {
-                client {
-                    client_id
-                    capabilities {
-                      code {
-                        type
-                      }
+        const command = {
+            mutation: {
+                createDatabaseClient: {
+                    __args: {
+                        input: {
+                            fields: clientData
+                        }
+                    },
+                    client: {
+                        client_id: true
                     }
-                    redirect_uris
-                }
-              }
+                },
             }
-        `;
-        
+        };
+        const commandText = jsonToGraphQLQuery(command, { pretty: true })
+            .replace(`type: "CODE"`, 'type: CODE');
+
         const response = await fetch(this.environment.graphqlClientManagementEndpoint, {
             method: 'POST',
             headers: {
               'authorization': `bearer ${this.accessToken}`,
               'content-type': 'application/graphql',
             },
-            body: data,
+            body: commandText,
         });
 
         if (response.status !== 200) {
