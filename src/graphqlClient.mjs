@@ -48,6 +48,8 @@ export class GraphqlClient {
             return;
         }
 
+        console.log(clientData);
+
         const command = {
             mutation: {
                 createDatabaseClient: {
@@ -62,6 +64,9 @@ export class GraphqlClient {
                 },
             }
         };
+        
+        // Transform the fields for this client to GraphQL format from JSON format
+        // Enumerated values must not be supplied as strings
         const commandText = jsonToGraphQLQuery(command, { pretty: true })
             .replace(`type: "CODE"`, 'type: CODE');
 
