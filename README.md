@@ -3,7 +3,7 @@
 [![Quality](https://img.shields.io/badge/quality-demo-red)](https://curity.io/resources/code-examples/status/)
 [![Availability](https://img.shields.io/badge/availability-source-blue)](https://curity.io/resources/code-examples/status/)
 
-A Node.js example to demonstrate the approach for migrating clients from configuration to database storage.
+A Node.js console app to demonstrate the approach for migrating clients from configuration to database storage.
 
 ## Prerequisites
 
@@ -31,7 +31,7 @@ The `migration-configuration.xml` file shows the approach for doing this:
 
 ## Running the Migration Process
 
-First, update the `migrate.sh` script to point to your own environment.\
+First, edit the `migrate.sh` script to point to your own environment.\
 The default settings point to a local development system:
 
 ```text
@@ -44,14 +44,9 @@ export MIGRATION_CLIENT_ID='migration-client'
 export MIGRATION_CLIENT_SECRET='Password1'
 ```
 
-Then run the migration and view output to see results:
-
-```bash
-npm start
-```
-
+Then run the script, or `npm start` to perform the migration, and view results.\
 Once the migration has completed, be sure to remove any migrated clients from configuration based storage.\
-This will remove the potential for unexpected behavior.
+This will avoid the potential for unexpected behavior.
 
 ## More information
 
