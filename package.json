@@ -1,0 +1,14 @@
+{
+    "name": "database-client-migration",
+    "version": "1.0.0",
+    "description": "Demonstrates how to use APIs to migrate from XML storage to database storage",
+    "author": "Curity AB",
+    "license": "Apache-2.0",
+    "type": "module",
+    "engines": {
+        "node": ">=18"
+    },
+    "scripts": {
+        "start": "./migrate.sh"
+    }
+}
