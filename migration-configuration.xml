@@ -1,0 +1,30 @@
+<config xmlns="http://tail-f.com/ns/config/1.0">
+  <profiles xmlns="https://curity.se/ns/conf/base">    
+    <profile>
+      <id>token-service</id>
+      <type xmlns:as="https://curity.se/ns/conf/profile/oauth">as:oauth-service</type>
+      <expose-detailed-error-messages/>
+      <settings>
+        <authorization-server xmlns="https://curity.se/ns/conf/profile/oauth">
+          <scopes>
+            <scope>
+              <id>database-clients</id>
+            </scope>
+          </scopes>
+          <client-store>
+            <config-backed>
+              <client>
+                <id>migration-client</id>
+                <secret>$5$G42KokVDuGkm1OY.$Q7U9JSeeX.2unc5PKryn2y5E3eIaCwDQe591by0Yg..</secret>
+                <scope>database-clients</scope>
+                <capabilities>
+                  <client-credentials/>
+                </capabilities>
+              </client>
+            </config-backed>
+          </client-store>
+        </authorization-server>
+      </settings>
+    </profile>
+  </profiles>
+</config>

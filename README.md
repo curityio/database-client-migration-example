@@ -3,7 +3,7 @@
 [![Quality](https://img.shields.io/badge/quality-demo-red)](https://curity.io/resources/code-examples/status/)
 [![Availability](https://img.shields.io/badge/availability-source-blue)](https://curity.io/resources/code-examples/status/)
 
-A Node.js code example to demonstrate the approach for migrating clients from configuration to database storage.
+A Node.js example to demonstrate the approach for migrating clients from configuration to database storage.
 
 ## Prerequisites
 
@@ -12,11 +12,21 @@ See the [Database Client Management with GraphQL](https://curity.io/resources/le
 
 ## Migration Behavior
 
-The migration shows how to perform the following steps:
+The migration shows how to perform the following steps in a simple Node.js GraphQL client:
 
 - Read existing clients from all token service profiles using the RESTCONF API
 - Translate them to the GraphQL client format
 - Save them to a JDBC data source by calling the GraphQL API
+
+## Migration Configuration
+
+The Node.js app needs to be authorized to call GraphQL authorization requirements.\
+It must therefore get an access token with the right permissions.\
+The `migration-configuration.xml` file shows the approach for doing this:
+
+- A `migration-client` is created that uses a custom `database-clients` scope
+- This scope is granted GraphQL database client access
+- A rule list is added to the attribute authorization manager configured against the token profile
 
 ## Running the Migration Process
 
