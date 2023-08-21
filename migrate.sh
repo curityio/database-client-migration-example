@@ -9,5 +9,6 @@ export TOKEN_ENDPOINT='http://localhost:8443/oauth/v2/oauth-token'
 export GRAPHQL_CLIENT_MANAGEMENT_ENDPOINT='http://localhost:8443/client-management'
 export MIGRATION_CLIENT_ID='migration-client'
 export MIGRATION_CLIENT_SECRET='Password1'
+export MIGRATION_CLIENT_SCOPE='database-clients'
 
 node src/index.mjs

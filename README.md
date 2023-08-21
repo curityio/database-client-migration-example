@@ -3,11 +3,11 @@
 [![Quality](https://img.shields.io/badge/quality-demo-red)](https://curity.io/resources/code-examples/status/)
 [![Availability](https://img.shields.io/badge/availability-source-blue)](https://curity.io/resources/code-examples/status/)
 
-A Node.js console app to demonstrate the approach for migrating clients from configuration to database storage.
+A Node.js console app to demonstrate migrating clients from configuration to database storage.
 
 ## Prerequisites
 
-First ensure that you have a working deployment of the Curity Identity Server, with GraphQL endpoints.\
+First ensure that you have a working deployment of the Curity Identity Server, with GraphQL endpoints exposed.\
 See the [Database Client Management with GraphQL](https://curity.io/resources/learn/graphql-client-management/) tutorial for details on the technical setup.\
 Also ensure that an up to date version of Node.js is installed.
 
@@ -25,9 +25,10 @@ The Node.js app needs to be authorized to call GraphQL authorization requirement
 It must therefore get an access token with the right permissions.\
 The `migration-configuration.xml` file shows the approach for doing this:
 
-- A `migration-client` is created that uses a custom `database-clients` scope
-- This scope is granted GraphQL database client access
-- A rule list is added to the attribute authorization manager configured against the token profile
+- A `migration-client` is created, which uses the client credentials flow to get an access token
+- The access tokens uses a custom `database-clients` scope
+- A GraphQL authorization manager enables access tokens with this scope to manage database clients
+- This in an attribute authorization manager, and is configured against the token service profile
 
 ## Running the Migration Process
 
@@ -42,6 +43,7 @@ export TOKEN_ENDPOINT='http://localhost:8443/oauth/v2/oauth-token'
 export GRAPHQL_CLIENT_MANAGEMENT_ENDPOINT='http://localhost:8443/client-management'
 export MIGRATION_CLIENT_ID='migration-client'
 export MIGRATION_CLIENT_SECRET='Password1'
+export MIGRATION_CLIENT_SCOPE='database-clients'
 ```
 
 Then run the script, or `npm start` to perform the migration, and view results.\

@@ -16,8 +16,8 @@ export async function getResponseErrorMessage(response) {
         const payload = await response.json();
 
         let text = '';
-        if (payload.error_code) {
-            text += payload.error_code;
+        if (payload.error) {
+            text += payload.error;
         }
         if (payload.error_description) {
             text += `, ${payload.error_description}`;

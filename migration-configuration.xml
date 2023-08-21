@@ -3,9 +3,9 @@
     <profile>
       <id>token-service</id>
       <type xmlns:as="https://curity.se/ns/conf/profile/oauth">as:oauth-service</type>
-      <expose-detailed-error-messages/>
       <settings>
         <authorization-server xmlns="https://curity.se/ns/conf/profile/oauth">
+          <authorization-manager>graphql_authorization_manager</authorization-manager>
           <scopes>
             <scope>
               <id>database-clients</id>
@@ -27,4 +27,31 @@
       </settings>
     </profile>
   </profiles>
+  <processing xmlns="https://curity.se/ns/conf/base">
+    <authorization-managers>
+      <authorization-manager>
+      <id>graphql_authorization_manager</id>
+        <attribute xmlns="https://curity.se/ns/ext-conf/attribute">
+          <rule-list>
+            <name>database-migration-access</name>
+            <rule>
+              <name>dbclient-access</name>
+              <access-operation>create</access-operation>
+              <access-operation>read</access-operation>
+              <access-operation>update</access-operation>
+              <access-operation>delete</access-operation>
+              <attribute>dbclients.*</attribute>
+              <decision>allow</decision>
+            </rule>
+            <select-rule-list-when>
+              <context-requirement>db-clients</context-requirement>
+              <scope-requirement>
+                <scope>database-clients</scope>
+              </scope-requirement>
+            </select-rule-list-when>
+          </rule-list>
+        </attribute>
+      </authorization-manager>
+    </authorization-managers>
+  </processing>
 </config>

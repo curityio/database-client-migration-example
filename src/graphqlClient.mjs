@@ -28,7 +28,7 @@ export class GraphqlClient {
                 'content-type': 'application/x-www-form-urlencoded',
                 'authorization': `Basic ${new Buffer.from(credential).toString('base64')}`,
             },
-            body: 'grant_type=client_credentials&scope=database_clients',
+            body: `grant_type=client_credentials&scope=${this.environment.migrationClientScope}`,
         });
 
         if (response.status !== 200) {

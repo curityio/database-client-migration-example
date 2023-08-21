@@ -19,6 +19,7 @@ export function getEnvironment() {
         graphqlClientManagementEndpoint: getEnvironmentVariable("GRAPHQL_CLIENT_MANAGEMENT_ENDPOINT"),
         migrationClientId: getEnvironmentVariable("MIGRATION_CLIENT_ID"),
         migrationClientSecret: getEnvironmentVariable("MIGRATION_CLIENT_SECRET"),
+        migrationClientScope: getEnvironmentVariable("MIGRATION_CLIENT_SCOPE"),
     };
 }
 
