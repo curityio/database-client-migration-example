@@ -10,7 +10,7 @@
  */
 
 import { ObjectValues, SortOrderType } from './utils.js';
-import { Capabilities, NewClientWizardData } from './clients.js';
+import { Capabilities } from './clients.js';
 
 export enum RegistrationAuthenticationMethod {
   CLIENTS_MUST_AUTHENTICATE = 'clients-must-authenticate',

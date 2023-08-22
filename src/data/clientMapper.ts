@@ -10,7 +10,21 @@
  */
 
 import {Client, MutualTls} from './clients.js';
-import {ClientAuthentication, Code, DatabaseClient, Introspection, MutualTlsInput, NoAuth} from './database-clients.js';
+import {
+    Assertion,
+    AssistedToken,
+    BackchannelAuthentication,
+    ClientAuthentication,
+    ClientCredentials,
+    Code,
+    DatabaseClient, 
+    DatabaseClientHaapi,
+    Implicit,
+    Introspection,
+    MutualTlsInput,
+    NoAuth,
+    ResourceOwnerPasswordCredentials,
+    TokenExchange} from './database-clients.js';
 
 export class ClientMapper {
 
@@ -86,11 +100,71 @@ export class ClientMapper {
             token_exchange: null,
         };
 
+        if (client.capabilities.assertion) {
+
+            const jwksUri = client.capabilities.assertion?.jwt.trust['jwks-uri']?.uri;
+
+            databaseClient.capabilities.assertion = {
+                type: Assertion.ASSERTION,
+                jwt: {
+                    allow_reuse: client.capabilities.assertion?.jwt['allow-reuse'] || false,
+                    issuer: client.capabilities.assertion?.jwt?.trust?.issuer || null,
+                    signing: {
+                        asymmetric_key_id: client.capabilities.assertion?.jwt?.trust?.['asymmetric-signing-key'],
+                        symmetric_key: undefined,
+                        jwks: jwksUri ? {
+                            http_client_id: client.capabilities.assertion?.jwt.trust['jwks-uri']?.['http-client'] || null,
+                            uri: jwksUri,
+                        } : undefined,
+                    }
+                },
+            };
+        }
+
+        if (client.capabilities['assisted-token']) {
+
+            databaseClient.capabilities.assisted_token = {
+                type: AssistedToken.ASSISTED_TOKEN,
+            };
+        }
+
+        if (client.capabilities['backchannel-authentication']) {
+
+            databaseClient.capabilities.backchannel = {
+                type: BackchannelAuthentication.BACKCHANNEL_AUTHENTICATION,
+                allowed_backchannel_authenticators: [], // TOFIX
+            };
+        }
+
+        if (client.capabilities['client-credentials']) {
+
+            databaseClient.capabilities.client_credentials = {
+                type: ClientCredentials.CLIENT_CREDENTIALS,
+            }
+        }
+
         if (client.capabilities.code) {
+
             databaseClient.capabilities.code = {
-                proof_key: null,
-                require_pushed_authorization_request: null,
                 type: Code.CODE,
+                proof_key: null, // TOFIX
+                require_pushed_authorization_request: null, // TOFIX
+            };
+        }
+
+        if (client.capabilities.haapi) {
+
+            databaseClient.capabilities.haapi = {
+                type: DatabaseClientHaapi.HAAPI,
+                client_attestation: {} as any, // TOFIX
+                use_legacy_dpop: client.capabilities.haapi['use-legacy-dpop'],
+            };
+        }
+
+        if (client.capabilities.implicit) {
+
+            databaseClient.capabilities.implicit = {
+                type: Implicit.IMPLICIT,
             }
         }
 
@@ -98,6 +172,21 @@ export class ClientMapper {
             databaseClient.capabilities.introspection = {
                 type: Introspection.INTROSPECTION,
             }
+        }
+
+        if (client.capabilities['resource-owner-password-credentials']) {
+
+            databaseClient.capabilities.resource_owner_password = {
+                type: ResourceOwnerPasswordCredentials.ROPC,
+                credential_manager_id: null, // TOFIX
+            };
+        }
+
+        if (client.capabilities['token-exchange']) {
+
+            databaseClient.capabilities.token_exchange = {
+                type: TokenExchange.TOKEN_EXCHANGE,
+            };
         }
     }
 
@@ -252,7 +341,7 @@ export class ClientMapper {
                 authenticator_filters: source['authenticator-filters'] || [],
                 backchannel_logout_uri: source['backchannel-logout-uri'] || null,
                 consent: null,
-                context_info: source['context-info'] || '', // REVIEW THIS
+                context_info: source['context-info'] || '', // TOFIX
                 force_authentication: source['force-authn'] || null,
                 freshness: source.freshness || null,
                 frontchannel_logout_uri: source['frontchannel-logout-uri'] || null,
@@ -291,7 +380,7 @@ export class ClientMapper {
             destination.dn = {
                 client_dn: source['client-dn'],
                 trusted_cas: trustedCas,
-                rdns_to_match: [], // REVIEW THIS
+                rdns_to_match: [], // TOFIX
             }
 
         } else if (source['client-dns-name']) {
@@ -328,4 +417,3 @@ export class ClientMapper {
         return value === 'disabled' ? undefined : value;
     }
 }
-
