@@ -241,18 +241,17 @@ export class ClientMapper {
         }
     }
 
-    // NOT FINISHED YET
     private setUserAuthentication(databaseClient: DatabaseClient, client: Client): void {
 
         const source = client['user-authentication'];
         if (source) {
-
+            
             databaseClient.user_authentication = {
                 allowed_authenticators: source['allowed-authenticators'] || [],
                 allowed_post_logout_redirect_uris: source['allowed-post-logout-redirect-uris'] || [],
                 authenticator_filters: source['authenticator-filters'] || [],
                 backchannel_logout_uri: source['backchannel-logout-uri'] || null,
-                consent: null, // TODO
+                consent: null,
                 context_info: source['context-info'] || '', // REVIEW THIS
                 force_authentication: source['force-authn'] || null,
                 freshness: source.freshness || null,
@@ -262,6 +261,16 @@ export class ClientMapper {
                 required_claims: source['required-claims'] || [],
                 template_area: source['template-area'] || null,
             };
+
+            const consent = client['user-consent'];
+            if (consent) {
+
+                databaseClient.user_authentication.consent = {
+                    allow_deselection: consent['allow-deselection'],
+                    only_consentors: consent['only-consentors'],
+                    consentors: consent.consentors?.consentor || [],
+                }
+            }
         }
     }
 
