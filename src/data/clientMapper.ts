@@ -244,37 +244,25 @@ export class ClientMapper {
     // NOT FINISHED YET
     private setUserAuthentication(databaseClient: DatabaseClient, client: Client): void {
 
-        databaseClient.user_authentication = {
-            allowed_authenticators: [],
-            allowed_post_logout_redirect_uris: [],
-            authenticator_filters: [],
-            backchannel_logout_uri: null,
-            consent: null,
-            context_info: '',
-            force_authentication: null,
-            freshness: null,
-            frontchannel_logout_uri: null,
-            http_client_id: null,
-            locale: null,
-            required_claims: [],
-            template_area: null,
-        };
+        const source = client['user-authentication'];
+        if (source) {
 
-        /*{
-            allowed_authenticators: string[];
-            allowed_post_logout_redirect_uris: string[];
-            authenticator_filters: string[];
-            backchannel_logout_uri: string | null;
-            consent: ConsentInput | null;
-            context_info: string;
-            force_authentication: boolean | null;
-            freshness: number | null;
-            frontchannel_logout_uri: string | null;
-            http_client_id: string | null;
-            locale: string | null;
-            required_claims: string[];
-            template_area: string | null;
-        }*/
+            databaseClient.user_authentication = {
+                allowed_authenticators: source['allowed-authenticators'] || [],
+                allowed_post_logout_redirect_uris: source['allowed-post-logout-redirect-uris'] || [],
+                authenticator_filters: source['authenticator-filters'] || [],
+                backchannel_logout_uri: source['backchannel-logout-uri'] || null,
+                consent: null, // TODO
+                context_info: source['context-info'] || '', // REVIEW THIS
+                force_authentication: source['force-authn'] || null,
+                freshness: source.freshness || null,
+                frontchannel_logout_uri: source['frontchannel-logout-uri'] || null,
+                http_client_id: source['http-client'] || null,
+                locale: source.locale || null,
+                required_claims: source['required-claims'] || [],
+                template_area: source['template-area'] || null,
+            };
+        }
     }
 
     private setMutualTlsDetails(source: MutualTls, destination: MutualTlsInput) {
@@ -294,7 +282,7 @@ export class ClientMapper {
             destination.dn = {
                 client_dn: source['client-dn'],
                 trusted_cas: trustedCas,
-                rdns_to_match: [], // TODO
+                rdns_to_match: [], // REVIEW THIS
             }
 
         } else if (source['client-dns-name']) {
