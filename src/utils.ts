@@ -9,7 +9,7 @@
  * For further information, please contact Curity AB.
  */
 
-export async function getResponseErrorMessage(response) {
+export async function getResponseErrorMessage(response: any): Promise<string> {
 
     if (response.headers['content-type']?.toLowerCase() !== 'application/json') {
         
@@ -34,7 +34,7 @@ export async function getResponseErrorMessage(response) {
     return '';
 }
 
-export async function getGraphqlErrorMessage(responseData) {
+export function getGraphqlErrorMessage(responseData: any): string {
 
     let text = '';
     for (const error of responseData.errors) {

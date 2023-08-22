@@ -9,9 +9,15 @@
         "node": ">=18"
     },
     "scripts": {
-        "start": "./migrate.sh"
+        "start": "node --loader ts-node/esm --no-warnings src/index.ts"
     },
     "dependencies": {
+        "dotenv": "^16.3.1",
         "json-to-graphql-query": "^2.2.5"
+    },
+    "devDependencies": {
+        "@types/node": "^18.15.11",
+        "ts-node": "^10.9.1",
+        "typescript": "^5.1.3"
     }
 }

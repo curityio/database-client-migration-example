@@ -32,7 +32,7 @@ The `migration-configuration.xml` file shows the approach for doing this:
 
 ## Running the Migration Process
 
-First, edit the `migrate.sh` script to point to your own environment.\
+First, edit the `src/emvorpmigrate.sh` script to point to your own environment.\
 The default settings point to a local development system:
 
 ```text
@@ -46,7 +46,11 @@ export MIGRATION_CLIENT_SECRET='Password1'
 export MIGRATION_CLIENT_SCOPE='database-clients'
 ```
 
-Then run the script, or `npm start` to perform the migration, and view results.\
+Then run the script
+
+
+
+, or `npm start` to perform the migration, and view results.\
 Once the migration has completed, be sure to remove any migrated clients from configuration based storage.\
 This will avoid the potential for unexpected behavior.
 

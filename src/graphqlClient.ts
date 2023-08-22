@@ -10,16 +10,20 @@
  */
 
 import {jsonToGraphQLQuery} from 'json-to-graphql-query';
-import {getResponseErrorMessage, getGraphqlErrorMessage} from './utils.mjs'
+import {getResponseErrorMessage, getGraphqlErrorMessage} from './utils.js'
+import {Environment} from './environment.js';
 
 export class GraphqlClient {
 
-    constructor(environment) {
+    private readonly environment: Environment;
+    private accessToken: string;
+
+    constructor(environment: Environment) {
         this.environment = environment;
         this.accessToken = '';
     }
 
-    async authenticate() {
+    public async authenticate(): Promise<void> {
 
         const credential = `${this.environment.migrationClientId}:${this.environment.migrationClientSecret}`;
         const response = await fetch(this.environment.tokenEndpoint, {
@@ -27,7 +31,7 @@ export class GraphqlClient {
             headers: {
                 'accept': 'application/json',
                 'content-type': 'application/x-www-form-urlencoded',
-                'authorization': `Basic ${new Buffer.from(credential).toString('base64')}`,
+                'authorization': `Basic ${Buffer.from(credential).toString('base64')}`,
             },
             body: `grant_type=client_credentials&scope=${this.environment.migrationClientScope}`,
         });
@@ -42,9 +46,9 @@ export class GraphqlClient {
         console.log(this.accessToken);
     }
 
-    async saveClient(clientData) {
+    public async saveClient(clientData: any): Promise<void> {
 
-        if (clientData.client_id !== 'web-client') {
+        if (clientData.client_id !== 'introspect-client') {
             return;
         }
 
@@ -68,7 +72,8 @@ export class GraphqlClient {
         // Transform the fields for this client to GraphQL format from JSON format
         // Enumerated values must not be supplied as strings
         const commandText = jsonToGraphQLQuery(command, { pretty: true })
-            .replace(`type: "CODE"`, 'type: CODE');
+            .replace(`type: "CODE"`, 'type: CODE')
+            .replace(`type: "INTROSPECTION"`, 'type: INTROSPECTION');
 
         const response = await fetch(this.environment.graphqlClientManagementEndpoint, {
             method: 'POST',
@@ -86,7 +91,7 @@ export class GraphqlClient {
 
         const responseData = await response.json();
         if (responseData.errors) {
-            const message = await getGraphqlErrorMessage(responseData);
+            const message = getGraphqlErrorMessage(responseData);
             throw new Error(`GRAPHQL request to save client ${clientData.client_id} failed: ${message}`);
         }
     }

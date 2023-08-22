@@ -12,9 +12,9 @@
 /*
  * Initial approach to get a basic working solution and focus on the setup
  */
-export function mapStaticClientToDatabaseClient(client) {
+export function mapStaticClientToDatabaseClient(client: any): any {
 
-    const dataMap = {
+    const dataMap: any = {
         'access_token_ttl': client['access-token-ttl'] || undefined,
         'allowed_origins': client['allowed-origins'] || undefined,
         'application_url': client['application-url'] || undefined,
@@ -23,7 +23,7 @@ export function mapStaticClientToDatabaseClient(client) {
         'capabilities': getCapabilities(client['capabilities']) || undefined,
         'client_id': client['id'] || undefined,
         'redirect_uris': client['redirect-uris'] || undefined,
-        'scopes': client['scope'] || undefined,
+        'scopes': client['scope'] || [],
         'client_authentication': getClientAuthentication(client['secret']) || undefined,
         'user_authentication': getUserAuthentication(client['user-authentication']) || undefined,
         'validate_port_on_loopback_interfaces': client['validate-port-on-loopback-interfaces'] || undefined,
@@ -33,7 +33,7 @@ export function mapStaticClientToDatabaseClient(client) {
     return dataMap;
 }
 
-function getCapabilities(capabilities) {
+function getCapabilities(capabilities: any): any {
 
     if (capabilities?.code) {
         return {
@@ -43,10 +43,18 @@ function getCapabilities(capabilities) {
         };
     }
 
+    if (capabilities?.introspection) {
+        return {
+            introspection: {
+                type: 'INTROSPECTION',
+            },
+        };
+    }
+
     return undefined;
 }
 
-function getClientAuthentication(secret) {
+function getClientAuthentication(secret: string) {
 
     if (secret) {
         return {
@@ -61,7 +69,7 @@ function getClientAuthentication(secret) {
     return undefined;
 }
 
-function getUserAuthentication(userAuthentication) {
+function getUserAuthentication(userAuthentication: any): any {
 
     if (userAuthentication) {
         return {
@@ -75,7 +83,8 @@ function getUserAuthentication(userAuthentication) {
 /*
  * TODO: Use a more generic approach, using this data map from the Admin UI
  */
-export function mapClientPropertyNameToDatabaseClient(propertyOrPath) {
+export function mapClientPropertyNameToDatabaseClient(propertyOrPath: string): any {
+
     const map = {
         'access-token-ttl': 'access_token_ttl',
         'allowed-origins': 'allowed_origins',
@@ -145,5 +154,5 @@ export function mapClientPropertyNameToDatabaseClient(propertyOrPath) {
         secret: 'client_authentication=primary=secret',
     };
   
-    return map[propertyOrPath];
+    return (map as any)[propertyOrPath];
 }

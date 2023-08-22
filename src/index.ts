@@ -9,10 +9,10 @@
  * For further information, please contact Curity AB.
  */
 
-import {getEnvironment} from './environment.mjs'
-import {RestconfClient} from './restconfClient.mjs'
-import {GraphqlClient} from './graphqlClient.mjs'
-import {mapStaticClientToDatabaseClient} from './clientMapper.mjs'
+import {getEnvironment} from './environment.js'
+import {RestconfClient} from './restconfClient.js'
+import {GraphqlClient} from './graphqlClient.js'
+import {mapStaticClientToDatabaseClient} from './clientMapper.js'
 
 try {
 
@@ -40,7 +40,7 @@ try {
         }
     }
 
-} catch (e) {
+} catch (e: any) {
 
     console.log(`Problem encountered: ${e.message}`);
 }

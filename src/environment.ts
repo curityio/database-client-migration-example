@@ -9,7 +9,21 @@
  * For further information, please contact Curity AB.
  */
 
-export function getEnvironment() {
+import dotenv from 'dotenv';
+dotenv.config();
+
+export interface Environment {
+    adminBaseUrl: string;
+    restconfUsername: string;
+    restconfPassword: string;
+    tokenEndpoint: string;
+    graphqlClientManagementEndpoint: string;
+    migrationClientId: string;
+    migrationClientSecret: string;
+    migrationClientScope: string;
+}
+
+export function getEnvironment(): Environment {
 
     return {
         adminBaseUrl: getEnvironmentVariable("ADMIN_BASE_URL"),
@@ -23,7 +37,7 @@ export function getEnvironment() {
     };
 }
 
-function getEnvironmentVariable(name) {
+function getEnvironmentVariable(name: string) {
 
     const value = process.env[name];
     if (!value) {
