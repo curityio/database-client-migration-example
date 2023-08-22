@@ -9,9 +9,9 @@
  * For further information, please contact Curity AB.
  */
 
+import {ClientMapper} from './data/clientMapper.js'
 import {getEnvironment} from './environment.js'
 import {RestconfClient} from './restconfClient.js'
-import {ClientMapper} from './clientMapper.js'
 import {GraphqlClient} from './graphqlClient.js'
 
 try {
@@ -31,13 +31,13 @@ try {
     for (const profileId of oauthProfileIds) {
         
         console.log(`Reading OAuth clients for profile '${profileId}' ...`);
-        const restconfClientsData = await restconfClient.getClientsForProfile(profileId);
-        for (const restconfClientData of restconfClientsData) {
+        const clients = await restconfClient.getClientsForProfile(profileId);
+        for (const client of clients) {
         
-            console.log(`Migrating OAuth client '${restconfClientData.id}' to GraphQL format ...`);
-            const graphqlClientData = mapper.convertToDatabaseClient(restconfClientData);
-            await graphqlClient.saveClient(graphqlClientData);
-            console.log(`OAuth client '${graphqlClientData.client_id}' was migrated to the database successfully`);
+            console.log(`Migrating OAuth client '${client.id}' ...`);
+            const databaseClient = mapper.convertToDatabaseClient(client);
+            await graphqlClient.saveClient(databaseClient);
+            console.log(`OAuth client '${client.id}' was migrated to the database successfully`);
         }
     }
 
