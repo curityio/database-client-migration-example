@@ -9,58 +9,68 @@
  * For further information, please contact Curity AB.
  */
 
-import {Client} from './clients.js';
-import {ClientAuthentication, Code, DatabaseClient, Introspection} from './database-clients.js';
+import {Client, MutualTls} from './clients.js';
+import {ClientAuthentication, Code, DatabaseClient, Introspection, MutualTlsInput, NoAuth} from './database-clients.js';
 
 export class ClientMapper {
 
     public convertToDatabaseClient(client: Client): DatabaseClient {
 
+        if (client.id === 'web-client') {
+            console.log(client);
+        }
+
+        // Set easily derivable values, with placeholders for more complex objects such as capabilities
         const databaseClient: DatabaseClient = {
-            
-            // Easy to translate values
             access_token_ttl: client['access-token-ttl'] || null,
+            allow_per_request_redirect_uris: client.capabilities?.code?.['require-pushed-authorization-requests']?.['allow-per-request-redirect-uris'] || null,
             allowed_origins: client['allowed-origins'] || null,
             application_url: client['application-url'] || null,
             audiences: client['audience'] || [],
+            capabilities: {} as any,
             claim_mapper_id: client['claims-mapper'] || null,
+            client_authentication: {} as any,
             client_id: client['id'],
             description: client['description'] || null,
+            id_token: null,
             logo_uri: client['logo'] || null,
             name: client['client-name'] || null,
             policy_uri: client['privacy-policy-url'] || null,
+            properties: {},
             redirect_uri_validation_policy_id: client['redirect-uri-validation-policy'] || null,
             redirect_uris: client['redirect-uris'] || null,
+            refresh_token: null,
+            request_object: null,
             require_secured_authorization_response: Array.isArray(client['require-secured-authorization-response']) ? true : false,
             scopes: client['scope'] || [],
+            sector_identifier: null,
             status: client['enabled'] ? 'ACTIVE' : 'INACTIVE',
+            subject_type: 'public',
+            tags: [],
+            user_authentication: null,
             userinfo_signed_issuer_id: client['signed-userinfo']?.['userinfo-token-issuer'] || null,
             tos_uri: client['terms-of-service-url'] || null,
             validate_port_on_loopback_interfaces: client['validate-port-on-loopback-interfaces'] || null,
-
-            // Not done properly yet
-            allow_per_request_redirect_uris: null,
-            capabilities: {} as any,
-            client_authentication: {} as any,
-            id_token: null,
-            properties: {},
-            refresh_token: null,
-            request_object: null,
-            sector_identifier: null,
-            subject_type: 'public',
-            tags: null,
-            user_authentication: null,
         };
 
+        // Set more complex properties such as capabilities
         this.setCapabilities(databaseClient, client);
         this.setClientAuthentication(databaseClient, client);
         this.setIdToken(databaseClient, client);
+        this.setPPIDs(databaseClient, client);
+        this.setProperties(databaseClient, client);
         this.setRefreshToken(databaseClient, client);
+        this.setRequestObject(databaseClient, client);
         this.setUserAuthentication(databaseClient, client);
+
+        if (client.id === 'web-client') {
+            console.log(databaseClient);
+        }
 
         return databaseClient;
     }
 
+    // NOT FINISHED YET
     private setCapabilities(databaseClient: DatabaseClient, client: Client): void {
 
         databaseClient.capabilities = {
@@ -93,10 +103,8 @@ export class ClientMapper {
 
     private setClientAuthentication(databaseClient: DatabaseClient, client: Client): void {
 
-        // JWKS URI is unsupported for database clients, and is migrated with a type of no-authentication
         const clientAuthentication: ClientAuthentication = {
-            primary: {
-            },
+            primary: {},
             secondary: null,
             secondary_verifier_expiration: null,
         };
@@ -115,7 +123,13 @@ export class ClientMapper {
 
         } else if (client['mutual-tls']) {
 
+            clientAuthentication.primary.mutual_tls = {};
+            this.setMutualTlsDetails(client['mutual-tls'], clientAuthentication.primary.mutual_tls);
+
         } else if (client['mutual-tls-by-proxy']) {
+
+            clientAuthentication.primary.mutual_tls_by_proxy = {};
+            this.setMutualTlsDetails(client['mutual-tls-by-proxy'], clientAuthentication.primary.mutual_tls_by_proxy);
 
         } else if (client['secret']) {
 
@@ -128,6 +142,11 @@ export class ClientMapper {
             clientAuthentication.primary.symmetric = {
                 symmetric_key: client['symmetric-key'],
             };
+
+        } else {
+
+            // JWKS URI is unsupported for database clients, and is migrated with a type of no-authentication
+            clientAuthentication.primary.no_authentication = NoAuth.no_auth;
         }
 
         databaseClient.client_authentication = clientAuthentication;
@@ -136,13 +155,41 @@ export class ClientMapper {
     private setIdToken(databaseClient: DatabaseClient, client: Client): void {
 
         const idTokenTtl = client['id-token-ttl'];
-        if (idTokenTtl) {
+        const idTokenEncryption = client['id-token-encryption'];
+        if (idTokenTtl || idTokenEncryption) {
 
             databaseClient.id_token = {
-                id_token_ttl: idTokenTtl,
+                id_token_ttl: null,
                 id_token_encryption: null,
+            };
+
+            if (idTokenTtl) {
+                databaseClient.id_token.id_token_ttl = idTokenTtl;
             }
-        } 
+            if (idTokenEncryption) {
+                databaseClient.id_token.id_token_encryption = {
+                    allowed_content_encryption_alg: idTokenEncryption['content-encryption-algorithm'],
+                    allowed_key_management_alg: idTokenEncryption['key-management-algorithm'],
+                    encryption_key_id: idTokenEncryption['encryption-key'],
+                };
+            }
+        }
+    }
+
+    private setPPIDs(databaseClient: DatabaseClient, client: Client): void {
+
+        const usePPIDs = client['use-pairwise-subject-identifiers'];
+        if (usePPIDs) {
+            databaseClient.subject_type = 'pairwise';
+            databaseClient.sector_identifier = usePPIDs['sector-identifier'] || null;
+        }
+    }
+
+    private setProperties(databaseClient: DatabaseClient, client: Client): void {
+
+        client['properties']?.property.forEach((p) => {
+            databaseClient.properties[p.key] = p.value;
+        });
     }
 
     private setRefreshToken(databaseClient: DatabaseClient, client: Client): void {
@@ -171,6 +218,30 @@ export class ClientMapper {
         }
     }
 
+    private setRequestObject(databaseClient: DatabaseClient, client: Client): void {
+
+        const source = client['request-object'];
+        if (source) {
+
+            databaseClient.request_object = {
+                allow_unsigned_for_by_value: source['allow-unsigned-for-by-value'],
+                by_reference: null,
+                request_jwt_issuer: source['issuer'] || null,
+                request_jwt_signature_verification_key: source['signature-verification-key'] || null,
+            }
+
+            const sourceByRef = source['by-reference'];
+            if (sourceByRef) {
+                databaseClient.request_object.by_reference = {
+                    allow_unsigned_for: sourceByRef['allow-unsigned'],
+                    allowed_request_urls: sourceByRef['allowed-request-url'] || [],
+                    http_client_id: sourceByRef['http-client'] || null,
+                };
+            }
+        }
+    }
+
+    // NOT FINISHED YET
     private setUserAuthentication(databaseClient: DatabaseClient, client: Client): void {
 
         databaseClient.user_authentication = {
@@ -204,6 +275,56 @@ export class ClientMapper {
             required_claims: string[];
             template_area: string | null;
         }*/
+    }
+
+    private setMutualTlsDetails(source: MutualTls, destination: MutualTlsInput) {
+
+        const trustedCas = source['trusted-ca'] ? [source['trusted-ca']] : [];
+
+        if (source['client-certificate']) {
+            destination.pinned_certificate = {
+                client_certificate_id: source['client-certificate'],
+            }
+            
+            destination.trusted_cas = trustedCas;
+        }
+
+        if (source['client-dn']) {
+
+            destination.dn = {
+                client_dn: source['client-dn'],
+                trusted_cas: trustedCas,
+                rdns_to_match: [], // TODO
+            }
+
+        } else if (source['client-dns-name']) {
+
+            destination.dns = {
+                client_dns: source['client-dns-name'],
+                trusted_cas: trustedCas,
+            }
+
+        }  else if (source['client-uri']) {
+
+            destination.uri = {
+                client_uri: source['client-uri'],
+                trusted_cas: trustedCas,
+            }
+
+        } else if (source['client-ip']) {
+
+            destination.ip = {
+                client_ip: source['client-ip'],
+                trusted_cas: trustedCas,
+            }
+
+        } else if (source['client-email']) {
+
+            destination.email = {
+                client_email: source['client-email'],
+                trusted_cas: trustedCas,
+            }
+        }
     }
 
     private getNumberSafe(value: number | 'disabled' | undefined): number | undefined {

@@ -51,7 +51,7 @@ export class GraphqlClient {
 
     public async saveClient(databaseClient: DatabaseClient): Promise<void> {
 
-        if (databaseClient.client_id !== 'introspect-client') {
+        if (databaseClient.client_id !== 'web-client') {
             return;
         }
 

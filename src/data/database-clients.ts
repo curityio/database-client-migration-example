@@ -67,7 +67,7 @@ export interface ByRefRequestObject {
 }
 
 export interface IdToken {
-  id_token_ttl: number;
+  id_token_ttl: number | null;
   id_token_encryption: JweEncryption | null;
 }
 
@@ -133,13 +133,13 @@ export interface ClientAuthenticationVerifierInput {
 }
 
 export interface MutualTlsInput {
-  pinned_certificate: PinnedCertificateInput;
+  pinned_certificate?: PinnedCertificateInput;
   trusted_cas?: string[];
-  dn: DnMutualTlsInput;
-  email: EmailMutualTlsInput;
-  uri: UriMutualTlsInput;
-  ip: IpMutualTlsInput;
-  dns: DnsMutualTlsInput;
+  dn?: DnMutualTlsInput;
+  email?: EmailMutualTlsInput;
+  uri?: UriMutualTlsInput;
+  ip?: IpMutualTlsInput;
+  dns?: DnsMutualTlsInput;
 }
 
 export interface DnMutualTlsInput {

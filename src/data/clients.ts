@@ -81,6 +81,7 @@ export interface JwksUri {
 
 export interface MutualTls {
   'client-certificate'?: string;
+  'client-dn'?: string;
   'client-dns-name'?: string;
   'client-email'?: string;
   'client-ip'?: string;
