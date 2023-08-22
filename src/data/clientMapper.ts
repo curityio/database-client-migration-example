@@ -9,7 +9,9 @@
  * For further information, please contact Curity AB.
  */
 
+import {EnumType} from 'json-to-graphql-query';
 import {Client, MutualTls} from './clients.js';
+
 import {
     Assertion,
     AssistedToken,
@@ -29,10 +31,6 @@ import {
 export class ClientMapper {
 
     public convertToDatabaseClient(client: Client): DatabaseClient {
-
-        if (client.id === 'web-client') {
-            console.log(client);
-        }
 
         // Set easily derivable values, with placeholders for more complex objects such as capabilities
         const databaseClient: DatabaseClient = {
@@ -77,9 +75,9 @@ export class ClientMapper {
         this.setRequestObject(databaseClient, client);
         this.setUserAuthentication(databaseClient, client);
 
-        if (client.id === 'web-client') {
-            console.log(databaseClient);
-        }
+        // Handle enumerated types specially, so that we can correctly produce the GraphQL string to post later
+        (databaseClient as any).status = new EnumType(databaseClient.status),
+        (databaseClient as any).subject_type = new EnumType(databaseClient.subject_type)
 
         return databaseClient;
     }
@@ -105,7 +103,7 @@ export class ClientMapper {
             const jwksUri = client.capabilities.assertion?.jwt.trust['jwks-uri']?.uri;
 
             databaseClient.capabilities.assertion = {
-                type: Assertion.ASSERTION,
+                type: new EnumType(Assertion.ASSERTION) as any,
                 jwt: {
                     allow_reuse: client.capabilities.assertion?.jwt['allow-reuse'] || false,
                     issuer: client.capabilities.assertion?.jwt?.trust?.issuer || null,
@@ -124,14 +122,14 @@ export class ClientMapper {
         if (client.capabilities['assisted-token']) {
 
             databaseClient.capabilities.assisted_token = {
-                type: AssistedToken.ASSISTED_TOKEN,
+                type: new EnumType(AssistedToken.ASSISTED_TOKEN) as any,
             };
         }
 
         if (client.capabilities['backchannel-authentication']) {
 
             databaseClient.capabilities.backchannel = {
-                type: BackchannelAuthentication.BACKCHANNEL_AUTHENTICATION,
+                type: new EnumType(BackchannelAuthentication.BACKCHANNEL_AUTHENTICATION) as any,
                 allowed_backchannel_authenticators: [], // TOFIX
             };
         }
@@ -139,14 +137,14 @@ export class ClientMapper {
         if (client.capabilities['client-credentials']) {
 
             databaseClient.capabilities.client_credentials = {
-                type: ClientCredentials.CLIENT_CREDENTIALS,
+                type: new EnumType(ClientCredentials.CLIENT_CREDENTIALS) as any,
             }
         }
 
         if (client.capabilities.code) {
 
             databaseClient.capabilities.code = {
-                type: Code.CODE,
+                type: new EnumType(Code.CODE) as any, 
                 proof_key: null, // TOFIX
                 require_pushed_authorization_request: null, // TOFIX
             };
@@ -155,7 +153,7 @@ export class ClientMapper {
         if (client.capabilities.haapi) {
 
             databaseClient.capabilities.haapi = {
-                type: DatabaseClientHaapi.HAAPI,
+                type: new EnumType(DatabaseClientHaapi.HAAPI) as any,
                 client_attestation: {} as any, // TOFIX
                 use_legacy_dpop: client.capabilities.haapi['use-legacy-dpop'],
             };
@@ -164,20 +162,20 @@ export class ClientMapper {
         if (client.capabilities.implicit) {
 
             databaseClient.capabilities.implicit = {
-                type: Implicit.IMPLICIT,
+                type: new EnumType(Implicit.IMPLICIT) as any,
             }
         }
 
         if (client.capabilities.introspection) {
             databaseClient.capabilities.introspection = {
-                type: Introspection.INTROSPECTION,
+                type: new EnumType(Introspection.INTROSPECTION) as any,
             }
         }
 
         if (client.capabilities['resource-owner-password-credentials']) {
 
             databaseClient.capabilities.resource_owner_password = {
-                type: ResourceOwnerPasswordCredentials.ROPC,
+                type: new EnumType(ResourceOwnerPasswordCredentials.ROPC) as any,
                 credential_manager_id: null, // TOFIX
             };
         }
@@ -185,7 +183,7 @@ export class ClientMapper {
         if (client.capabilities['token-exchange']) {
 
             databaseClient.capabilities.token_exchange = {
-                type: TokenExchange.TOKEN_EXCHANGE,
+                type: new EnumType(TokenExchange.TOKEN_EXCHANGE) as any,
             };
         }
     }
@@ -341,7 +339,7 @@ export class ClientMapper {
                 authenticator_filters: source['authenticator-filters'] || [],
                 backchannel_logout_uri: source['backchannel-logout-uri'] || null,
                 consent: null,
-                context_info: source['context-info'] || '', // TOFIX
+                context_info: source['context-info'] || '',
                 force_authentication: source['force-authn'] || null,
                 freshness: source.freshness || null,
                 frontchannel_logout_uri: source['frontchannel-logout-uri'] || null,

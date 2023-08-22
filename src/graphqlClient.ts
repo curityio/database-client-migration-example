@@ -70,13 +70,9 @@ export class GraphqlClient {
             }
         };
 
-        // Transform the fields for this client to GraphQL format from JSON format
-        // Enumerated values must be supplied without quotes
-        const commandText = jsonToGraphQLQuery(command, { pretty: true })
-            .replace(`type: "CODE"`, 'type: CODE')
-            .replace(`type: "INTROSPECTION"`, 'type: INTROSPECTION')
-            .replace(`status: "INACTIVE"`, 'status: INACTIVE')
-            .replace(`subject_type: "public"`, 'subject_type: public');
+        // Transform the fields for this client to the required GraphQL string to post
+        const commandText = jsonToGraphQLQuery(command, { pretty: true });
+        console.log(commandText);
 
         const response = await fetch(this.environment.graphqlClientManagementEndpoint, {
             method: 'POST',
