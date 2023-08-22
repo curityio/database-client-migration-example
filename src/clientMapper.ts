@@ -9,83 +9,9 @@
  * For further information, please contact Curity AB.
  */
 
-/*
- * Initial approach to get a basic working solution and focus on the setup
- */
-export function mapStaticClientToDatabaseClient(client: any): any {
+export class ClientMapper {
 
-    const dataMap: any = {
-        'access_token_ttl': client['access-token-ttl'] || undefined,
-        'allowed_origins': client['allowed-origins'] || undefined,
-        'application_url': client['application-url'] || undefined,
-        'audience': client['audiences'] || undefined,
-        'claims_mapper_id': client['claims-mapper'] || undefined,
-        'capabilities': getCapabilities(client['capabilities']) || undefined,
-        'client_id': client['id'] || undefined,
-        'redirect_uris': client['redirect-uris'] || undefined,
-        'scopes': client['scope'] || [],
-        'client_authentication': getClientAuthentication(client['secret']) || undefined,
-        'user_authentication': getUserAuthentication(client['user-authentication']) || undefined,
-        'validate_port_on_loopback_interfaces': client['validate-port-on-loopback-interfaces'] || undefined,
-    }
-
-    Object.keys(dataMap).forEach((key) => dataMap[key] === undefined && delete dataMap[key]);
-    return dataMap;
-}
-
-function getCapabilities(capabilities: any): any {
-
-    if (capabilities?.code) {
-        return {
-            code: {
-                type: 'CODE',
-            },
-        };
-    }
-
-    if (capabilities?.introspection) {
-        return {
-            introspection: {
-                type: 'INTROSPECTION',
-            },
-        };
-    }
-
-    return undefined;
-}
-
-function getClientAuthentication(secret: string) {
-
-    if (secret) {
-        return {
-            primary: {
-                secret: {
-                    secret,
-                },
-            },
-        };
-    }
-
-    return undefined;
-}
-
-function getUserAuthentication(userAuthentication: any): any {
-
-    if (userAuthentication) {
-        return {
-            context_info: '',
-        };
-    }
-
-    return undefined;
-}
-
-/*
- * TODO: Use a more generic approach, using this data map from the Admin UI
- */
-export function mapClientPropertyNameToDatabaseClient(propertyOrPath: string): any {
-
-    const map = {
+    private readonly propertyMap = {
         'access-token-ttl': 'access_token_ttl',
         'allowed-origins': 'allowed_origins',
         'application-url': 'application_url',
@@ -153,6 +79,72 @@ export function mapClientPropertyNameToDatabaseClient(propertyOrPath: string): a
         scope: 'scopes',
         secret: 'client_authentication=primary=secret',
     };
-  
-    return (map as any)[propertyOrPath];
+
+    public convertToDatabaseClient(restconfClient: any): any {
+
+        const dataMap: any = {
+            'access_token_ttl': restconfClient['access-token-ttl'] || undefined,
+            'allowed_origins': restconfClient['allowed-origins'] || undefined,
+            'application_url': restconfClient['application-url'] || undefined,
+            'audience': restconfClient['audiences'] || undefined,
+            'claims_mapper_id': restconfClient['claims-mapper'] || undefined,
+            'capabilities': this.getCapabilities(restconfClient['capabilities']) || undefined,
+            'client_id': restconfClient['id'] || undefined,
+            'redirect_uris': restconfClient['redirect-uris'] || undefined,
+            'scopes': restconfClient['scope'] || [],
+            'client_authentication': this.getClientAuthentication(restconfClient['secret']) || undefined,
+            'user_authentication': this.getUserAuthentication(restconfClient['user-authentication']) || undefined,
+            'validate_port_on_loopback_interfaces': restconfClient['validate-port-on-loopback-interfaces'] || undefined,
+        }
+    
+        Object.keys(dataMap).forEach((key) => dataMap[key] === undefined && delete dataMap[key]);
+        return dataMap;
+    }
+
+    private getCapabilities(capabilities: any): any {
+
+        if (capabilities?.code) {
+            return {
+                code: {
+                    type: 'CODE',
+                },
+            };
+        }
+
+        if (capabilities?.introspection) {
+            return {
+                introspection: {
+                    type: 'INTROSPECTION',
+                },
+            };
+        }
+
+        return undefined;
+    }
+
+    private getClientAuthentication(secret: string) {
+
+        if (secret) {
+            return {
+                primary: {
+                    secret: {
+                        secret,
+                    },
+                },
+            };
+        }
+
+        return undefined;
+    }
+
+    private getUserAuthentication(userAuthentication: any): any {
+
+        if (userAuthentication) {
+            return {
+                context_info: '',
+            };
+        }
+
+        return undefined;
+    }
 }

@@ -13,6 +13,9 @@ import {jsonToGraphQLQuery} from 'json-to-graphql-query';
 import {getResponseErrorMessage, getGraphqlErrorMessage} from './utils.js'
 import {Environment} from './environment.js';
 
+/*
+ * A class to send database client information to GraphQL APIs
+ */
 export class GraphqlClient {
 
     private readonly environment: Environment;

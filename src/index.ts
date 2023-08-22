@@ -11,13 +11,14 @@
 
 import {getEnvironment} from './environment.js'
 import {RestconfClient} from './restconfClient.js'
+import {ClientMapper} from './clientMapper.js'
 import {GraphqlClient} from './graphqlClient.js'
-import {mapStaticClientToDatabaseClient} from './clientMapper.js'
 
 try {
 
     console.log('Preparing environment ...');
     const environment = getEnvironment();
+    const mapper = new ClientMapper();
 
     console.log('Reading all profiles from configuration ...');
     const restconfClient = new RestconfClient(environment);
@@ -34,7 +35,7 @@ try {
         for (const restconfClientData of restconfClientsData) {
         
             console.log(`Migrating OAuth client '${restconfClientData.id}' to GraphQL format ...`);
-            const graphqlClientData = mapStaticClientToDatabaseClient(restconfClientData);
+            const graphqlClientData = mapper.convertToDatabaseClient(restconfClientData);
             await graphqlClient.saveClient(graphqlClientData);
             console.log(`OAuth client '${graphqlClientData.client_id}' was migrated to the database successfully`);
         }

@@ -11,6 +11,9 @@
 
 import {Environment} from './environment.js';
 
+/*
+ * A class to download OAuth client information from the RESTCONF API
+ */
 export class RestconfClient {
 
     private readonly environment: Environment;
