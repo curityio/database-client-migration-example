@@ -70,9 +70,8 @@ The migrated clients can now be managed from the DevOps dashboard:
 
 Once usage is understood, the same approach can be followed for real environments.\
 First ensure that you have a working backup of the configuration clients. \
-Start with test stages of the deployment pipeline, and do basic testing of your clients after the migration.
-
-Reconfigure the `.env` file to point the Node.js app to your own environment, then re-run the migration:
+Start with test stages of the deployment pipeline, and do basic testing of your clients after the migration.\
+Reconfigure the `.env` file to point the Node.js app to the correct environment before running each migration:
 
 ```text
 RESTCONF_USER='admin'
