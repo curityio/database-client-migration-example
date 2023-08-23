@@ -3,7 +3,7 @@
 [![Quality](https://img.shields.io/badge/quality-demo-red)](https://curity.io/resources/code-examples/status/)
 [![Availability](https://img.shields.io/badge/availability-source-blue)](https://curity.io/resources/code-examples/status/)
 
-A Node.js console app to show how to migrate OAuth clients from configuration to database storage:
+A Node.js console app to show the approach for migrating OAuth clients from configuration to database storage:
 
 - Read existing clients from all token service profiles using the RESTCONF API
 - Translate them to the GraphQL client format
