@@ -9,7 +9,7 @@
  * For further information, please contact Curity AB.
  */
 
-import {Client} from './data/clients.js';
+import {ConfigurationClient} from './data/configurationClient.js';
 import {Environment} from './environment.js';
 
 /*
@@ -34,10 +34,10 @@ export class RestconfClient {
             .map((profile: any) => profile.id);
     }
     
-    public async getClientsForProfile(profileId: string): Promise<Client[]> {
+    public async getClientsForProfile(profileId: string): Promise<ConfigurationClient[]> {
     
         const clientResponse = await this.getData(`base:profiles/profile=${profileId},oauth-service/settings/profile-oauth:authorization-server/client-store/config-backed`);
-        const clients = clientResponse['profile-oauth:config-backed']['client'] as Client[];
+        const clients = clientResponse['profile-oauth:config-backed']['client'] as ConfigurationClient[];
         return clients.filter((c: any) => c.id !== this.environment.migrationClientId);
     }
 

@@ -10,7 +10,8 @@
  */
 
 import {jsonToGraphQLQuery} from 'json-to-graphql-query';
-import {DatabaseClient} from './data/database-clients.js';
+import {ConfigurationClient} from './data/configurationClient.js';
+import {DatabaseClient} from './data/databaseClient.js';
 import {Environment} from './environment.js';
 import {getHttpErrorAsText, getGraphqlErrorAsText} from './utils.js'
 
@@ -49,15 +50,11 @@ export class GraphqlClient {
         this.accessToken = tokens.access_token;
     }
 
+    public async clientExists(configClient: ConfigurationClient): Promise<boolean> {
+        return false;
+    }
+
     public async saveClient(databaseClient: DatabaseClient): Promise<void> {
-
-        if (databaseClient.client_id !== 'web-client') {
-            return;
-        }
-
-        if (await this.clientExists(databaseClient)) {
-            return;
-        }
 
         const command = {
             mutation: {
@@ -96,9 +93,5 @@ export class GraphqlClient {
             const message = getGraphqlErrorAsText(responseData);
             throw new Error(`GRAPHQL request to save client ${databaseClient.client_id} failed: ${message}`);
         }
-    }
-
-    private async clientExists(databaseClient: DatabaseClient): Promise<boolean> {
-        return false;
     }
 }

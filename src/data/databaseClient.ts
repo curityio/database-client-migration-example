@@ -9,6 +9,11 @@
  * For further information, please contact Curity AB.
  */
 
+import {
+  AsymmetricKeyManagementAlgorithmType,
+  ContentEncryptionAlgorithmType,
+} from './algorithms.js';
+
 export interface DatabaseClient {
   access_token_ttl: number | null;
   allow_per_request_redirect_uris: boolean | null;
@@ -68,29 +73,6 @@ export interface JweEncryption {
   allowed_key_management_alg: AsymmetricKeyManagementAlgorithmType;
   encryption_key_id: string;
 }
-
-export const ContentEncryptionAlgorithm = {
-  A128CBC_HS256: 'A128CBC_HS256',
-  A128GCM: 'A128GCM',
-  A192CBC_HS384: 'A192CBC_HS384',
-  A192GCM: 'A192GCM',
-  A256CBC_HS512: 'A256CBC_HS512',
-  A256GCM: 'A256GCM',
-} as const;
-
-export const AsymmetricKeyManagementAlgorithm = {
-  ECDH_ES: 'ECDH_ES',
-  ECDH_ES_A128KW: 'ECDH_ES_A128KW',
-  ECDH_ES_A192KW: 'ECDH_ES_A192KW',
-  ECDH_ES_A256KW: 'ECDH_ES_A256KW',
-  RSA1_5: 'RSA1_5',
-  RSA_OAEP: 'RSA_OAEP',
-  RSA_OAEP_256: 'RSA_OAEP_256',
-} as const;
-
-export type ObjectValues<T> = T[keyof T];
-export type ContentEncryptionAlgorithmType = ObjectValues<typeof ContentEncryptionAlgorithm>;
-export type AsymmetricKeyManagementAlgorithmType = ObjectValues<typeof AsymmetricKeyManagementAlgorithm>;
 
 export interface DatabaseClientUserAuthentication {
   allowed_authenticators: string[];

@@ -10,7 +10,7 @@
  */
 
 import {ClientMapper} from './data/clientMapper.js'
-import {getEnvironment} from './environment.js'
+import {getEnvironment, isClientToIgnore} from './environment.js'
 import {RestconfClient} from './restconfClient.js'
 import {GraphqlClient} from './graphqlClient.js'
 
@@ -18,26 +18,33 @@ try {
 
     console.log('Preparing environment ...');
     const environment = getEnvironment();
+    const restconfClient = new RestconfClient(environment);
     const mapper = new ClientMapper();
+    const graphqlClient = new GraphqlClient(environment);
 
     console.log('Reading all profiles from configuration ...');
-    const restconfClient = new RestconfClient(environment);
     const oauthProfileIds = await restconfClient.getProfileIds();
 
-    console.log('Connecting to graphql ...');
-    const graphqlClient = new GraphqlClient(environment);
+    console.log('Initializing GraphQL client ...');
     await graphqlClient.authenticate();
 
     for (const profileId of oauthProfileIds) {
         
         console.log(`Reading OAuth clients for profile '${profileId}' ...`);
-        const clients = await restconfClient.getClientsForProfile(profileId);
-        for (const client of clients) {
-        
-            console.log(`Migrating OAuth client '${client.id}' ...`);
-            const databaseClient = mapper.convertToDatabaseClient(client);
-            await graphqlClient.saveClient(databaseClient);
-            console.log(`OAuth client '${client.id}' was succesfully migrated to database storage`);
+        const configClients = await restconfClient.getClientsForProfile(profileId);
+        for (const configClient of configClients) {
+
+            if (!isClientToIgnore(configClient.id)) {
+
+                const exists = await graphqlClient.clientExists(configClient);
+                if (!exists) {
+
+                    console.log(`Migrating OAuth client '${configClient.id}' ...`);
+                    const databaseClient = mapper.convertToDatabaseClient(configClient);
+                    await graphqlClient.saveClient(databaseClient);
+                    console.log(`OAuth client '${configClient.id}' was succesfully migrated to database storage`);
+                }
+            }
         }
     }
 

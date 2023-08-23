@@ -37,6 +37,12 @@ export function getEnvironment(): Environment {
     };
 }
 
+export function isClientToIgnore(id: string): boolean {
+    
+    return id === getEnvironmentVariable("MIGRATION_CLIENT_ID") ||
+           id == 'devops_dashboard_restconf_client';
+}
+
 function getEnvironmentVariable(name: string) {
 
     const value = process.env[name];

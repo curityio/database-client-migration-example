@@ -9,7 +9,8 @@
         "node": ">=18"
     },
     "scripts": {
-        "start": "node --loader ts-node/esm --no-warnings src/index.ts"
+        "start": "node --loader ts-node/esm --no-warnings src/index.ts",
+        "typegen": "graphql-codegen --config graphql.config.yml"
     },
     "dependencies": {
         "dotenv": "^16.3.1",

@@ -12,9 +12,9 @@
 import {
   AsymmetricKeyManagementAlgorithmType,
   ContentEncryptionAlgorithmType,
-} from './database-clients.js';
+} from './algorithms.js';
 
-export interface Client {
+export interface ConfigurationClient {
   'access-token-ttl': number;
   'allowed-origins'?: string[];
   'application-url'?: string;
