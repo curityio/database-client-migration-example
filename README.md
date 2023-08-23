@@ -62,20 +62,15 @@ In the Admin UI, remove the migrated clients from the token service profile.
 
 ### View Migrated Clients in the DevOps Dashboard
 
-The updated clients in the DevOps dashboard:
+The migrated clients can now be managed from the DevOps dashboard:
 
 ![migrated clients](images/migrated-clients.png)
 
 ## Run Real Migrations
 
 Once usage is understood, the same approach can be followed for real environments.\
+First ensure that you have a working backup of the configuration clients. \
 Start with test stages of the deployment pipeline, and do basic testing of your clients after the migration.
-
-### Backup the Configuration
-
-First ensure that you have a working backup of the configuration clients.
-
-### Run the Migration
 
 Reconfigure the `.env` file to point the Node.js app to your own environment, then re-run the migration:
 
