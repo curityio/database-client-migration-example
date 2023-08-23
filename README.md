@@ -11,7 +11,7 @@ A Node.js console app to show how to migrate OAuth clients from configuration to
 
 ## Prerequisites
 
-A working deployment of the Curity Identity Server, with [Database Client Management GraphQL Endpoints](https://curity.io/resources/learn/graphql-client-management/) configured.\
+An instance of the Curity Identity Server with [Database Client Management GraphQL Endpoints](https://curity.io/resources/learn/graphql-client-management/) configured.\
 Also ensure that an up to date version of Node.js is installed.
 
 ## Reahearse the Migration
