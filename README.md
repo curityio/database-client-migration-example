@@ -16,7 +16,7 @@ Also ensure that an up to date version of Node.js is installed.
 
 ## Reahearse the Migration
 
-To understand the parts involved in a migration, one option is to run the following steps:
+You can use the following steps to understand the steps involved in a migration:
 
 ### Deploy the Curity Identity Server
 
@@ -25,7 +25,8 @@ Run the [DevOps dashboard example deployment](https://github.com/curityio/devops
 ### Configure a Migration Client
 
 In the Admin UI, apply the [migration-configuration.xml](migration-configuration.xml) file using the `Changes / Upload` option.\
-This creates an attribute authorization manager with permissions to call the GraphQL database clients endpoint.
+This creates an attribute authorization manager with permissions to call the GraphQL database clients endpoint.\
+It also creates a migration client with the correct access tokens configured.
 
 ### Ensure Example Clients
 
@@ -55,7 +56,7 @@ Migrating OAuth client 'introspect-client' ...
 OAuth client 'introspect-client' was succesfully migrated to database storage
 ```
 
-### Remove the Configuration Clients
+### Remove Configuration Clients
 
 In the Admin UI, remove the migrated clients from the token service profile.
 
@@ -76,25 +77,18 @@ First ensure that you have a working backup of the configuration clients.
 
 ### Run the Migration
 
-First, reconfigure the `.env` file to point to your own environment:
+Reconfigure the `.env` file to point the Node.js app to your own environment, then re-run the migration:
 
 ```text
 RESTCONF_USER='admin'
-RESTCONF_PASSWORD='Password1'
-ADMIN_BASE_URL='http://localhost:6749'
-TOKEN_ENDPOINT='http://localhost:8443/oauth/v2/oauth-token'
-GRAPHQL_CLIENT_MANAGEMENT_ENDPOINT='http://localhost:8443/client-management'
+RESTCONF_PASSWORD='...'
+ADMIN_BASE_URL='https://admin.example-test.com'
+TOKEN_ENDPOINT='https://login.example-test.com/oauth/v2/oauth-token'
+GRAPHQL_CLIENT_MANAGEMENT_ENDPOINT='https://login.example-test.com/client-management'
 MIGRATION_CLIENT_ID='migration-client'
-MIGRATION_CLIENT_SECRET='Password1'
+MIGRATION_CLIENT_SECRET='...'
 MIGRATION_CLIENT_SCOPE='database-clients'
 ```
-
-This Node.js migration app needs to send access tokens that are authorized to call GraphQL authorization requirements.\
-
-- By default a `migration-client` is used, which uses the client credentials flow to get an access token
-- The access token uses a custom `database-clients` scope
-- The GraphQL authorization manager enables access tokens with this scope to manage database clients
-- This authorization manager is configured against the token service profile
 
 ## More information
 
