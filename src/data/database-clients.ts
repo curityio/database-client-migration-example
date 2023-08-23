@@ -9,14 +9,6 @@
  * For further information, please contact Curity AB.
  */
 
-import { ObjectValues, SortOrderType } from './utils.js';
-import { Capabilities } from './clients.js';
-
-export enum RegistrationAuthenticationMethod {
-  CLIENTS_MUST_AUTHENTICATE = 'clients-must-authenticate',
-  USERS_MUST_AUTHENTICATE = 'users-must-authenticate',
-}
-
 export interface DatabaseClient {
   access_token_ttl: number | null;
   allow_per_request_redirect_uris: boolean | null;
@@ -61,7 +53,7 @@ export interface RequestObject {
 }
 
 export interface ByRefRequestObject {
-  allow_unsigned_for: boolean;
+  allow_unsigned_for: boolean | null;
   allowed_request_urls: string[];
   http_client_id: string | null;
 }
@@ -86,8 +78,6 @@ export const ContentEncryptionAlgorithm = {
   A256GCM: 'A256GCM',
 } as const;
 
-export type ContentEncryptionAlgorithmType = ObjectValues<typeof ContentEncryptionAlgorithm>;
-
 export const AsymmetricKeyManagementAlgorithm = {
   ECDH_ES: 'ECDH_ES',
   ECDH_ES_A128KW: 'ECDH_ES_A128KW',
@@ -98,6 +88,8 @@ export const AsymmetricKeyManagementAlgorithm = {
   RSA_OAEP_256: 'RSA_OAEP_256',
 } as const;
 
+export type ObjectValues<T> = T[keyof T];
+export type ContentEncryptionAlgorithmType = ObjectValues<typeof ContentEncryptionAlgorithm>;
 export type AsymmetricKeyManagementAlgorithmType = ObjectValues<typeof AsymmetricKeyManagementAlgorithm>;
 
 export interface DatabaseClientUserAuthentication {
@@ -196,14 +188,6 @@ export interface SymmetricKey {
   symmetric_key: string;
 }
 
-export interface MutualTlsVerifier {
-  mutual_tls: MutualTls;
-}
-
-export interface MutualTlsByProxyVerifier {
-  mutual_tls_by_proxy: MutualTls;
-}
-
 export interface CredentialManager {
   credential_manager_id: string;
 }
@@ -212,23 +196,14 @@ export interface Secret {
   secret: string;
 }
 
-export interface NoAuthentication {
-  no_authentication: NoAuth;
-}
-
 export enum NoAuth {
   no_auth = 'no_auth',
 }
 
-export interface Meta {
-  created: number;
-  lastModified: number;
-}
-
 export interface UserConsent {
-  allow_deselection: boolean;
+  allow_deselection: boolean | null;
   consentors: string[];
-  only_consentors: boolean;
+  only_consentors: boolean | null;
 }
 
 export interface DatabaseClientCapabilities {
@@ -266,22 +241,33 @@ export enum Disable {
   DISABLE = 'DISABLE',
 }
 
-export type DatabaseClientAttestationType = Web | Android | Ios | Disable;
-
 export interface DatabaseClientAttestation {
-  type: DatabaseClientAttestationType;
-  policy_id?: string | null;
+  android?: AndroidAttestation;
+  ios?: IosAttestation;
+  no_attestation?: NoAttestation;
+  web?: WebAttestation;
+}
 
-  // Android
-  package_names?: string[];
-  signature_fingerprints?: string[];
+export interface AndroidAttestation {
+  type: Android;
+  policy_id: string | null;
+  package_names: string[];
+  signature_fingerprints: string[];
+}
 
-  // iOS
-  app_id?: string;
+export interface IosAttestation {
+  type: Ios;
+  app_id: string;
+  policy_id: string | null;
 }
 
 export interface NoAttestation {
   type: Disable;
+}
+
+export interface WebAttestation {
+  type: Web;
+  policy_id: string | null;
 }
 
 export enum DatabaseClientHaapi {
@@ -433,261 +419,3 @@ export interface IpMutualTls extends NameAndCa {
 export interface DnsMutualTls extends NameAndCa {
   client_dns: string;
 }
-
-export interface CreateDatabaseClientInput {
-  fields: DatabaseClientCreateFields;
-}
-
-// Todo: Derive this from the DatabaseClient type if possible
-export interface DatabaseClientCreateFields {
-  access_token_ttl: number;
-  allow_per_request_redirect_uris: boolean | null;
-  allowed_origins?: string[];
-  application_url: string;
-  audiences: string[];
-  capabilities: CapabilitiesInput;
-  claim_mapper_id: string;
-  client_authentication: ClientAuthenticationInput;
-  client_id: string;
-  description: string;
-  id_token: IdTokenInput;
-  logo_uri: string;
-  name: string;
-  policy_uri: string;
-  properties: Record<string, string>;
-  redirect_uri_validation_policy_id: string;
-  redirect_uris: string[];
-  refresh_token: RefreshTokenInput;
-  request_object: RequestObjectInput;
-  require_secured_authorization_response: boolean;
-  scopes: string[];
-  sector_identifier: string;
-  status: DatabaseClientStatus;
-  subject_type: DatabaseClientSubjectType;
-  tags?: string[];
-  tos_uri: string;
-  user_authentication: UserAuthenticationInput;
-  userinfo_signed_issuer_id: string;
-  validate_port_on_loopback_interfaces: boolean | null;
-}
-
-export interface ClientAuthenticationInput {
-  primary: ClientAuthenticationVerifierInput;
-  secondary?: ClientAuthenticationVerifierInput;
-  secondary_verifier_expiration?: number;
-}
-
-export interface UserAuthenticationInput {
-  allowed_authenticators?: string[];
-  required_claims?: string[];
-  context_info: string;
-  template_area: string;
-  force_authentication: boolean;
-  freshness: number;
-  locale: string;
-  authenticator_filters?: string[];
-  frontchannel_logout_uri: string;
-  backchannel_logout_uri: string;
-  http_client_id: string;
-  allowed_post_logout_redirect_uris?: string[];
-  consent: ConsentInput;
-}
-
-export interface RefreshTokenInput {
-  refresh_token_ttl: number;
-  refresh_token_max_rolling_lifetime?: number;
-  reuse_refresh_tokens?: boolean;
-}
-
-export interface ConsentInput {
-  only_consentors?: boolean;
-  consentors?: string[];
-  allow_deselection?: boolean;
-}
-
-export interface CapabilitiesInput {
-  code: CodeCapabilityInput;
-  implicit: ImplicitCapabilityInput;
-  resource_owner_password: ResourceOwnerPasswordCredentialsCapabilityInput;
-  assertion: AssertionCapabilityInput;
-  assisted_token: AssistedTokenCapabilityInput;
-  backchannel: BackchannelAuthenticationCapabilityInput;
-  client_credentials: ClientCredentialsCapabilityInput;
-  introspection: IntrospectionCapabilityInput;
-  token_exchange: TokenExchangeCapabilityInput;
-  haapi: HaapiCapabilityInput;
-}
-
-export interface CodeCapabilityInput {
-  type: Code;
-  proof_key?: ProofKeyInput;
-  require_pushed_authorization_request?: boolean;
-}
-
-export interface ImplicitCapabilityInput {
-  type: Implicit;
-}
-
-export interface ResourceOwnerPasswordCredentialsCapabilityInput {
-  type: ResourceOwnerPasswordCredentials;
-  credential_manager_id: string;
-}
-
-export interface ClientCredentialsCapabilityInput {
-  type: ClientCredentials;
-}
-
-export interface IntrospectionCapabilityInput {
-  type: Introspection;
-}
-
-export interface AssistedTokenCapabilityInput {
-  type: AssistedToken;
-}
-
-export interface BackchannelAuthenticationCapabilityInput {
-  type: BackchannelAuthentication;
-  allowed_backchannel_authenticators?: string[];
-}
-
-export interface TokenExchangeCapabilityInput {
-  type: TokenExchange;
-}
-
-export interface AssertionCapabilityInput {
-  type: Assertion;
-  jwt: JwtAssertionInput;
-}
-
-export interface HaapiCapabilityInput {
-  type: DatabaseClientHaapi;
-  use_legacy_dpop: boolean;
-  client_attestation?: ClientAttestationInput;
-}
-
-export interface RequestObjectInput {
-  request_jwt_signature_verification_key: string;
-  request_jwt_issuer: string;
-  by_reference: ByRefRequestObjectInput;
-  allow_unsigned_for_by_value: boolean;
-}
-
-export interface IdTokenInput {
-  id_token_ttl: number;
-  id_token_encryption: JweEncryptionInput;
-}
-
-export interface ProofKeyInput {
-  require_proof_key: boolean;
-  disallow_challenge_method_s256?: boolean;
-  disallow_challenge_method_plain?: boolean;
-}
-
-export interface JwtAssertionInput {
-  issuer: string;
-  signing: JwtSigningInput;
-  allow_reuse: boolean;
-}
-
-export interface ClientAttestationInput {
-  web?: WebAttestationInput;
-  android?: AndroidAttestationInput;
-  ios?: IosAttestationInput;
-  no_attestation?: NoAttestationInput;
-}
-
-export interface WebAttestationInput {
-  type: Web;
-  policy_id: string;
-}
-
-export interface AndroidAttestationInput {
-  type: Android;
-  policy_id: string;
-  package_names: string[];
-  signature_fingerprints: string[];
-}
-
-export interface IosAttestationInput {
-  type: Ios;
-  policy_id: string;
-  app_id: string;
-}
-
-export interface NoAttestationInput {
-  type: Disable;
-}
-
-export interface ByRefRequestObjectInput {
-  http_client_id: string;
-  allowed_request_urls: string[];
-  allow_unsigned_for: boolean;
-}
-
-export interface JweEncryptionInput {
-  encryption_key_id: string;
-  allowed_key_management_alg: AsymmetricKeyManagementAlgorithmType;
-  allowed_content_encryption_alg: ContentEncryptionAlgorithmType;
-}
-
-export interface JwtSigningInput {
-  asymmetric_key?: AsymmetricKeyInput;
-  symmetric_key?: SymmetricKeyInput;
-  jwks?: JwksUriInput;
-}
-
-export interface JwksUriInput {
-  uri: string;
-  http_client_id: string;
-}
-
-export type DatabaseClientsSortBy = 'name' | 'created' | 'lastModified';
-
-export interface Sorting {
-  sortBy: DatabaseClientsSortBy;
-  sortOrder: SortOrderType;
-}
-
-export interface GetDatabaseClientsInput {
-  activeClientsOnly?: boolean;
-  clientName?: string;
-  tags?: string[];
-  first?: number;
-  after?: string;
-  sorting?: Sorting;
-}
-
-export interface GetDatabaseClientsResponse {
-  databaseClients: {
-    totalCount: number;
-    edges: { node: DatabaseClientLean }[];
-    pageInfo: { endCursor: string | null; hasNextPage: boolean };
-  };
-}
-
-export interface GetDatabaseClientsResponseMapped {
-  databaseClients: {
-    totalCount: number;
-    edges: { node: DatabaseClientLeanMapped }[];
-    pageInfo: { endCursor: string | null; hasNextPage: boolean };
-  };
-}
-
-export interface GetDatabaseClientByIdResponse {
-  databaseClientById: DatabaseClient;
-}
-
-export type DatabaseClientUpdateFields = Partial<DatabaseClientCreateFields>;
-
-export interface DatabaseClientLean {
-  client_id: string;
-  logo_uri: string;
-  status: DatabaseClientStatus;
-  meta: Meta;
-  name: string;
-  capabilities: DatabaseClientCapabilities;
-}
-
-export type DatabaseClientLeanMapped = Omit<DatabaseClientLean, 'capabilities'> & {
-  capabilities: Capabilities;
-};

@@ -13,20 +13,22 @@ import {EnumType} from 'json-to-graphql-query';
 import {Client, MutualTls} from './clients.js';
 
 import {
+    Android,
     Assertion,
     AssistedToken,
     BackchannelAuthentication,
-    ClientAuthentication,
     ClientCredentials,
     Code,
     DatabaseClient, 
     DatabaseClientHaapi,
     Implicit,
     Introspection,
+    Ios,
     MutualTlsInput,
     NoAuth,
     ResourceOwnerPasswordCredentials,
-    TokenExchange} from './database-clients.js';
+    TokenExchange,
+    Web} from './database-clients.js';
 
 export class ClientMapper {
 
@@ -65,7 +67,7 @@ export class ClientMapper {
             validate_port_on_loopback_interfaces: client['validate-port-on-loopback-interfaces'] || null,
         };
 
-        // Set more complex properties such as capabilities
+        // Apply any logic to update any placeholders from above
         this.setCapabilities(databaseClient, client);
         this.setClientAuthentication(databaseClient, client);
         this.setIdToken(databaseClient, client);
@@ -82,7 +84,6 @@ export class ClientMapper {
         return databaseClient;
     }
 
-    // NOT FINISHED YET
     private setCapabilities(databaseClient: DatabaseClient, client: Client): void {
 
         databaseClient.capabilities = {
@@ -130,7 +131,7 @@ export class ClientMapper {
 
             databaseClient.capabilities.backchannel = {
                 type: new EnumType(BackchannelAuthentication.BACKCHANNEL_AUTHENTICATION) as any,
-                allowed_backchannel_authenticators: [], // TOFIX
+                allowed_backchannel_authenticators: client.capabilities['backchannel-authentication']?.['allowed-authenticators'] || [],
             };
         }
 
@@ -145,18 +146,69 @@ export class ClientMapper {
 
             databaseClient.capabilities.code = {
                 type: new EnumType(Code.CODE) as any, 
-                proof_key: null, // TOFIX
-                require_pushed_authorization_request: null, // TOFIX
+                require_pushed_authorization_request: null,
+                proof_key: null,
+                
             };
+
+            const usePAR = client.capabilities.code['require-pushed-authorization-requests']
+            if (usePAR) {
+                databaseClient.capabilities.code.require_pushed_authorization_request = usePAR ? true : false;
+            }
+
+            const proofKey = client['proof-key'];
+            if (proofKey) {
+
+                const disallowPlain = !!proofKey['disallowed-proof-key-challenge-methods']?.find((m) => m === 'plain');
+                const disallowS256 = !!proofKey['disallowed-proof-key-challenge-methods']?.find((m) => m === 'S256');
+                databaseClient.capabilities.code.proof_key = {
+                    disallow_challenge_method_plain: disallowPlain,
+                    disallow_challenge_method_s256: disallowS256,                
+                    require_proof_key: proofKey['require-proof-key'],
+                };
+            }
         }
 
         if (client.capabilities.haapi) {
 
             databaseClient.capabilities.haapi = {
                 type: new EnumType(DatabaseClientHaapi.HAAPI) as any,
-                client_attestation: {} as any, // TOFIX
-                use_legacy_dpop: client.capabilities.haapi['use-legacy-dpop'],
+                client_attestation: {} as any,
+                use_legacy_dpop: client.capabilities.haapi['use-legacy-dpop'] || false,
             };
+
+            if (client.attestation) {
+
+                databaseClient.capabilities.haapi.client_attestation = {};
+
+                if (client.attestation['attestation-type'] === 'web') {
+                    
+                    databaseClient.capabilities.haapi.client_attestation.web = {
+                        type: Web.WEB,
+                        policy_id: client.attestation.web?.['web-policy'] || null,
+                    };
+                    (databaseClient.capabilities.haapi.client_attestation.web as any).type = new EnumType(databaseClient.capabilities.haapi.client_attestation.web.type);
+
+                } else if (client.attestation['attestation-type'] === 'android') {
+
+                    databaseClient.capabilities.haapi.client_attestation.android = {
+                        type: Android.ANDROID,
+                        policy_id: client.attestation?.android?.['android-policy'] || null,
+                        package_names: client.attestation?.android?.['package-name'] || [],
+                        signature_fingerprints: client.attestation?.android?.['signature-digest'] || [],
+                    };
+                    (databaseClient.capabilities.haapi.client_attestation.android as any).type = new EnumType(databaseClient.capabilities.haapi.client_attestation.android.type);
+
+                } else if (client.attestation['attestation-type'] === 'ios' && client.attestation.ios?.['app-id']) {
+
+                    databaseClient.capabilities.haapi.client_attestation.ios = {
+                        type: Ios.IOS,
+                        app_id: client.attestation.ios['app-id'],
+                        policy_id: client.attestation.ios?.['ios-policy'] || null,
+                    };
+                    (databaseClient.capabilities.haapi.client_attestation.ios as any).type = new EnumType(databaseClient.capabilities.haapi.client_attestation.ios.type);
+                }
+            }
         }
 
         if (client.capabilities.implicit) {
@@ -176,7 +228,7 @@ export class ClientMapper {
 
             databaseClient.capabilities.resource_owner_password = {
                 type: new EnumType(ResourceOwnerPasswordCredentials.ROPC) as any,
-                credential_manager_id: null, // TOFIX
+                credential_manager_id: client.capabilities['resource-owner-password-credentials']?.['credential-manager'] || null,
             };
         }
 
@@ -190,7 +242,7 @@ export class ClientMapper {
 
     private setClientAuthentication(databaseClient: DatabaseClient, client: Client): void {
 
-        const clientAuthentication: ClientAuthentication = {
+        databaseClient.client_authentication = {
             primary: {},
             secondary: null,
             secondary_verifier_expiration: null,
@@ -198,45 +250,93 @@ export class ClientMapper {
 
         if (client['asymmetric-key']) {
 
-            clientAuthentication.primary.asymmetric = {
+            databaseClient.client_authentication.primary.asymmetric = {
                 asymmetric_key_id: client['asymmetric-key'],
             };
 
         } else if (client['credential-manager']) {
 
-            clientAuthentication.primary.credential_manager = {
+            databaseClient.client_authentication.primary.credential_manager = {
                 credential_manager_id: client['credential-manager'],
             };
 
         } else if (client['mutual-tls']) {
 
-            clientAuthentication.primary.mutual_tls = {};
-            this.setMutualTlsDetails(client['mutual-tls'], clientAuthentication.primary.mutual_tls);
+            databaseClient.client_authentication.primary.mutual_tls = {};
+            this.setMutualTlsDetails(client['mutual-tls'], databaseClient.client_authentication.primary.mutual_tls);
 
         } else if (client['mutual-tls-by-proxy']) {
 
-            clientAuthentication.primary.mutual_tls_by_proxy = {};
-            this.setMutualTlsDetails(client['mutual-tls-by-proxy'], clientAuthentication.primary.mutual_tls_by_proxy);
+            databaseClient.client_authentication.primary.mutual_tls_by_proxy = {};
+            this.setMutualTlsDetails(client['mutual-tls-by-proxy'], databaseClient.client_authentication.primary.mutual_tls_by_proxy);
 
         } else if (client['secret']) {
 
-            clientAuthentication.primary.secret = {
+            databaseClient.client_authentication.primary.secret = {
                 secret: client['secret'],
             };
 
         } else if (client['symmetric-key']) {
 
-            clientAuthentication.primary.symmetric = {
+            databaseClient.client_authentication.primary.symmetric = {
                 symmetric_key: client['symmetric-key'],
             };
 
         } else {
 
             // JWKS URI is unsupported for database clients, and is migrated with a type of no-authentication
-            clientAuthentication.primary.no_authentication = NoAuth.no_auth;
+            databaseClient.client_authentication.primary.no_authentication = NoAuth.no_auth;
         }
 
-        databaseClient.client_authentication = clientAuthentication;
+        const secondary = client['secondary-authentication-method']
+        if (secondary) {
+
+            if (secondary['expires-on']) {
+                databaseClient.client_authentication.secondary_verifier_expiration = Date.parse(secondary['expires-on']) / 1000.0;
+            }
+
+            databaseClient.client_authentication.secondary = {};
+
+            if (secondary['asymmetric-key']) {
+
+                databaseClient.client_authentication.secondary.asymmetric = {
+                    asymmetric_key_id: secondary['asymmetric-key'],
+                };
+    
+            } else if (secondary['credential-manager']) {
+    
+                databaseClient.client_authentication.secondary.credential_manager = {
+                    credential_manager_id: secondary['credential-manager'],
+                };
+    
+            } else if (secondary['mutual-tls']) {
+    
+                databaseClient.client_authentication.secondary.mutual_tls = {};
+                this.setMutualTlsDetails(secondary['mutual-tls'], databaseClient.client_authentication.secondary.mutual_tls)
+    
+            } else if (secondary['mutual-tls-by-proxy']) {
+    
+                databaseClient.client_authentication.secondary.mutual_tls_by_proxy = {};
+                this.setMutualTlsDetails(secondary['mutual-tls-by-proxy'], databaseClient.client_authentication.secondary.mutual_tls_by_proxy);
+    
+            } else if (secondary['secret']) {
+    
+                databaseClient.client_authentication.secondary.secret = {
+                    secret: secondary['secret'],
+                };
+    
+            } else if (secondary['symmetric-key']) {
+    
+                databaseClient.client_authentication.secondary.symmetric = {
+                    symmetric_key: secondary['symmetric-key'],
+                };
+    
+            } else {
+    
+                // JWKS URI is unsupported for database clients, and is migrated with a type of no-authentication
+                databaseClient.client_authentication.secondary.no_authentication = NoAuth.no_auth;
+            }
+        }
     }
 
     private setIdToken(databaseClient: DatabaseClient, client: Client): void {
@@ -253,7 +353,10 @@ export class ClientMapper {
             if (idTokenTtl) {
                 databaseClient.id_token.id_token_ttl = idTokenTtl;
             }
-            if (idTokenEncryption) {
+            if (idTokenEncryption?.['content-encryption-algorithm'] &&
+                idTokenEncryption?.['key-management-algorithm'] &&
+                idTokenEncryption?.['encryption-key']) {
+
                 databaseClient.id_token.id_token_encryption = {
                     allowed_content_encryption_alg: idTokenEncryption['content-encryption-algorithm'],
                     allowed_key_management_alg: idTokenEncryption['key-management-algorithm'],
@@ -320,7 +423,7 @@ export class ClientMapper {
             const sourceByRef = source['by-reference'];
             if (sourceByRef) {
                 databaseClient.request_object.by_reference = {
-                    allow_unsigned_for: sourceByRef['allow-unsigned'],
+                    allow_unsigned_for: sourceByRef['allow-unsigned'] || null,
                     allowed_request_urls: sourceByRef['allowed-request-url'] || [],
                     http_client_id: sourceByRef['http-client'] || null,
                 };
@@ -353,8 +456,8 @@ export class ClientMapper {
             if (consent) {
 
                 databaseClient.user_authentication.consent = {
-                    allow_deselection: consent['allow-deselection'],
-                    only_consentors: consent['only-consentors'],
+                    allow_deselection: consent['allow-deselection'] || null,
+                    only_consentors: consent['only-consentors'] || null,
                     consentors: consent.consentors?.consentor || [],
                 }
             }
@@ -378,7 +481,7 @@ export class ClientMapper {
             destination.dn = {
                 client_dn: source['client-dn'],
                 trusted_cas: trustedCas,
-                rdns_to_match: [], // TOFIX
+                rdns_to_match: [],
             }
 
         } else if (source['client-dns-name']) {

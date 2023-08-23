@@ -12,7 +12,7 @@
 import {jsonToGraphQLQuery} from 'json-to-graphql-query';
 import {DatabaseClient} from './data/database-clients.js';
 import {Environment} from './environment.js';
-import {getResponseErrorMessage, getGraphqlErrorMessage} from './utils.js'
+import {getHttpErrorAsText, getGraphqlErrorAsText} from './utils.js'
 
 /*
  * A class to send database client information to GraphQL APIs
@@ -41,7 +41,7 @@ export class GraphqlClient {
         });
 
         if (response.status !== 200) {
-            const message = await getResponseErrorMessage(response);
+            const message = await getHttpErrorAsText(response);
             throw new Error(`Token endpoint request failed: ${message}`);
         }
 
@@ -52,6 +52,10 @@ export class GraphqlClient {
     public async saveClient(databaseClient: DatabaseClient): Promise<void> {
 
         if (databaseClient.client_id !== 'web-client') {
+            return;
+        }
+
+        if (await this.clientExists(databaseClient)) {
             return;
         }
 
@@ -72,7 +76,6 @@ export class GraphqlClient {
 
         // Transform the fields for this client to the required GraphQL string to post
         const commandText = jsonToGraphQLQuery(command, { pretty: true });
-        console.log(commandText);
 
         const response = await fetch(this.environment.graphqlClientManagementEndpoint, {
             method: 'POST',
@@ -84,14 +87,18 @@ export class GraphqlClient {
         });
 
         if (response.status !== 200) {
-            const message = await getResponseErrorMessage(response);
+            const message = await getHttpErrorAsText(response);
             throw new Error(`GRAPHQL request to save client ${databaseClient.client_id} failed: ${response.status}: ${message}`);
         }
 
         const responseData = await response.json();
         if (responseData.errors) {
-            const message = getGraphqlErrorMessage(responseData);
+            const message = getGraphqlErrorAsText(responseData);
             throw new Error(`GRAPHQL request to save client ${databaseClient.client_id} failed: ${message}`);
         }
+    }
+
+    private async clientExists(databaseClient: DatabaseClient): Promise<boolean> {
+        return false;
     }
 }

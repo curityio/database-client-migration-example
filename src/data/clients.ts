@@ -9,13 +9,10 @@
  * For further information, please contact Curity AB.
  */
 
-import { EmptyObject } from './utility-types.js';
 import {
   AsymmetricKeyManagementAlgorithmType,
   ContentEncryptionAlgorithmType,
-  RegistrationAuthenticationMethod,
 } from './database-clients.js';
-import { ObjectValues } from './utils.js';
 
 export interface Client {
   'access-token-ttl': number;
@@ -26,7 +23,6 @@ export interface Client {
   'client-authentication-method'?: string;
   'client-name'?: string;
   'credential-manager'?: string;
-  'dynamic-client-registration-template'?: DynamicClientRegistrationTemplate;
   'id-token-encryption'?: IdTokenEncryption;
   'id-token-ttl'?: number;
   'jwks-uri'?: JwksUri;
@@ -93,13 +89,6 @@ export interface IdTokenEncryption {
   'content-encryption-algorithm': ContentEncryptionAlgorithmType;
   'encryption-key': string;
   'key-management-algorithm': AsymmetricKeyManagementAlgorithmType;
-}
-
-export interface DynamicClientRegistrationTemplate {
-  'credential-manager'?: string;
-  'authenticate-user-by'?: string[];
-  secret?: [null];
-  'authenticate-client-by'?: string[];
 }
 
 export interface SignedUserinfo {
@@ -181,7 +170,7 @@ export interface Capabilities {
   'backchannel-authentication'?: BackChannelAuthenticationCapability;
   'client-credentials'?: [null];
   'device-authorization'?: [null];
-  'resource-owner-password-credentials'?: EmptyObject;
+  'resource-owner-password-credentials'?: ResourceOwnerPasswordCapability;
   'token-exchange'?: [null];
   assertion?: AssertionCapability;
   code?: CodeCapability;
@@ -194,6 +183,10 @@ export interface CodeCapability {
   'require-pushed-authorization-requests'?: {
     'allow-per-request-redirect-uris'?: boolean;
   };
+}
+
+export interface ResourceOwnerPasswordCapability {
+  'credential-manager'?: string;
 }
 
 export interface BackChannelAuthenticationCapability {
@@ -233,70 +226,3 @@ export interface UserAuthentication {
   freshness?: number;
   locale?: string;
 }
-
-export interface ClientLean {
-  'client-name'?: string;
-  capabilities: Capabilities;
-  enabled: boolean;
-  id: string;
-}
-
-export interface NewClientWizardData {
-  ID_AND_TYPE: {
-    id: string;
-  };
-  APP_DETAILS?: {
-    capabilities: {
-      code?: true;
-      'device-authorization'?: true;
-    };
-    'user-authentication'?: {
-      'backchannel-logout-uri'?: string;
-      'frontchannel-logout-uri'?: string;
-    };
-    'redirect-uris'?: string[];
-    'allowed-origins'?: string[];
-  };
-  CLIENT_AUTHENTICATION: {
-    'asymmetric-key'?: string;
-    'client-authentication-method': ClientAuthenticationMethodType;
-    'credential-manager'?: string;
-    'no-authentication'?: true;
-    'symmetric-key'?: string;
-    secret?: string;
-    'jwks-uri'?: {
-      uri: string;
-    };
-  };
-  USER_AUTHENTICATION?: {
-    'user-authentication': {
-      'allowed-authenticators'?: string[];
-    };
-  };
-  SELECT_SCOPES: {
-    'openid-connect'?: boolean;
-    'openid-connect-user-info'?: boolean;
-    scope?: string[];
-  };
-  DCR_REGISTRATION?: {
-    'dynamic-client-registration-template': {
-      'client-authentication-method': ClientAuthenticationMethodType;
-      'registration-authentication-method': RegistrationAuthenticationMethod;
-      'authenticate-user-by'?: string[];
-      'credential-manager'?: string;
-    };
-  };
-}
-
-export const ClientAuthenticationMethod = {
-  ASYMMETRIC_KEY: 'asymmetric-key',
-  CREDENTIAL_MANAGER: 'credential-manager',
-  JWKS_URI: 'jwks-uri',
-  MUTUAL_TLS: 'mutual-tls',
-  MUTUAL_TLS_BY_PROXY: 'mutual-tls-by-proxy',
-  NO_AUTHENTICATION: 'no-authentication',
-  SECRET: 'secret',
-  SYMMETRIC_KEY: 'symmetric-key',
-} as const;
-
-export type ClientAuthenticationMethodType = ObjectValues<typeof ClientAuthenticationMethod>;
