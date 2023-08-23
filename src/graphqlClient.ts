@@ -10,7 +10,6 @@
  */
 
 import {jsonToGraphQLQuery} from 'json-to-graphql-query';
-import {ConfigurationClient} from './data/configurationClient.js';
 import {DatabaseClient} from './data/databaseClient.js';
 import {Environment} from './environment.js';
 import {getHttpErrorAsText, getGraphqlErrorAsText} from './utils.js'
@@ -50,10 +49,6 @@ export class GraphqlClient {
         this.accessToken = tokens.access_token;
     }
 
-    public async clientExists(configClient: ConfigurationClient): Promise<boolean> {
-        return false;
-    }
-
     public async saveClient(databaseClient: DatabaseClient): Promise<void> {
 
         const command = {
@@ -61,17 +56,30 @@ export class GraphqlClient {
                 createDatabaseClient: {
                     __args: {
                         input: {
-                            fields: databaseClient
-                        }
+                            fields: databaseClient,
+                        },
                     },
                     client: {
-                        client_id: true
-                    }
+                        client_id: true,
+                    },
                 },
             }
         };
 
-        // Transform the fields for this client to the required GraphQL string to post
+        try {
+            
+            await this.runGraphqlCommand('saveClient', command);
+
+        } catch(e: any) {
+
+            if (!e.message?.indexOf('already registered')) {
+                throw e;
+            }
+        }
+    }
+
+    private async runGraphqlCommand(name: string, command: any): Promise<any> {
+        
         const commandText = jsonToGraphQLQuery(command, { pretty: true });
 
         const response = await fetch(this.environment.graphqlClientManagementEndpoint, {
@@ -85,13 +93,15 @@ export class GraphqlClient {
 
         if (response.status !== 200) {
             const message = await getHttpErrorAsText(response);
-            throw new Error(`GRAPHQL request to save client ${databaseClient.client_id} failed: ${response.status}: ${message}`);
+            throw new Error(`GRAPHQL ${name} request failed: ${response.status}: ${message}`);
         }
 
         const responseData = await response.json();
         if (responseData.errors) {
             const message = getGraphqlErrorAsText(responseData);
-            throw new Error(`GRAPHQL request to save client ${databaseClient.client_id} failed: ${message}`);
+            throw new Error(`GRAPHQL ${name} request failed: ${message}`);
         }
+
+        return responseData;
     }
 }
