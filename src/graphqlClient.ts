@@ -72,7 +72,7 @@ export class GraphqlClient {
 
         } catch(e: any) {
 
-            if (!e.message?.indexOf('already registered')) {
+            if (e.message?.indexOf('already registered') === -1) {
                 throw e;
             }
         }
@@ -81,6 +81,7 @@ export class GraphqlClient {
     private async runGraphqlCommand(name: string, command: any): Promise<any> {
         
         const commandText = jsonToGraphQLQuery(command, { pretty: true });
+        console.log(commandText);
 
         const response = await fetch(this.environment.graphqlClientManagementEndpoint, {
             method: 'POST',

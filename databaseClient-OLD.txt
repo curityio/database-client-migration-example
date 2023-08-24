@@ -1,0 +1,403 @@
+/*
+ * Copyright (C) 2023 Curity AB. All rights reserved.
+ *
+ * The contents of this file are the property of Curity AB.
+ * You may not copy or use this file, in either source code
+ * or executable form, except in compliance with terms
+ * set by Curity AB.
+ *
+ * For further information, please contact Curity AB.
+ */
+
+import {
+  AsymmetricKeyManagementAlgorithmType,
+  ContentEncryptionAlgorithmType,
+} from './algorithms.js';
+
+export interface DatabaseClient {
+  access_token_ttl: number | null;
+  allow_per_request_redirect_uris: boolean | null;
+  allowed_origins: string[] | null;
+  application_url: string | null;
+  audiences: string[];
+  capabilities: DatabaseClientCapabilities;
+  claim_mapper_id: string | null;
+  client_authentication: ClientAuthentication;
+  client_id: string;
+  description: string | null;
+  id_token: IdToken | null;
+  logo_uri: string | null;
+  name: string | null;
+  policy_uri: string | null;
+  properties: Record<string, string>;
+  redirect_uri_validation_policy_id: string | null;
+  redirect_uris: string[] | null;
+  refresh_token: RefreshToken | null;
+  request_object: RequestObject | null;
+  require_secured_authorization_response: boolean;
+  scopes: string[];
+  sector_identifier: string | null;
+  status: DatabaseClientStatus;
+  subject_type: DatabaseClientSubjectType;
+  tags: string[] | null;
+  tos_uri: string | null;
+  user_authentication: DatabaseClientUserAuthentication | null;
+  userinfo_signed_issuer_id: string | null;
+  validate_port_on_loopback_interfaces: boolean | null;
+}
+
+export type DatabaseClientStatus = 'ACTIVE' | 'INACTIVE' | 'REVOKED';
+
+export type DatabaseClientSubjectType = 'pairwise' | 'public';
+
+export interface RequestObject {
+  allow_unsigned_for_by_value: boolean;
+  by_reference: ByRefRequestObject | null;
+  request_jwt_issuer: string | null;
+  request_jwt_signature_verification_key: string | null;
+}
+
+export interface ByRefRequestObject {
+  allow_unsigned_for: boolean | null;
+  allowed_request_urls: string[];
+  http_client_id: string | null;
+}
+
+export interface IdToken {
+  id_token_ttl: number | null;
+  id_token_encryption: JweEncryption | null;
+}
+
+export interface JweEncryption {
+  allowed_content_encryption_alg: ContentEncryptionAlgorithmType;
+  allowed_key_management_alg: AsymmetricKeyManagementAlgorithmType;
+  encryption_key_id: string;
+}
+
+export interface DatabaseClientUserAuthentication {
+  allowed_authenticators: string[];
+  allowed_post_logout_redirect_uris: string[];
+  authenticator_filters: string[];
+  backchannel_logout_uri: string | null;
+  consent: UserConsent | null;
+  context_info: string;
+  force_authentication: boolean | null;
+  freshness: number | null;
+  frontchannel_logout_uri: string | null;
+  http_client_id: string | null;
+  locale: string | null;
+  required_claims: string[];
+  template_area: string | null;
+}
+
+export interface ClientAuthentication {
+  primary: ClientAuthenticationVerifierInput;
+  secondary: ClientAuthenticationVerifierInput | null;
+  secondary_verifier_expiration: number | null;
+}
+
+export interface ClientAuthenticationVerifierInput {
+  asymmetric?: AsymmetricKeyInput;
+  symmetric?: SymmetricKeyInput;
+  credential_manager?: CredentialManagerInput;
+  secret?: SecretInput;
+  no_authentication?: NoAuth;
+  mutual_tls?: MutualTlsInput;
+  mutual_tls_by_proxy?: MutualTlsInput;
+}
+
+export interface MutualTlsInput {
+  pinned_certificate?: PinnedCertificateInput;
+  trusted_cas?: string[];
+  dn?: DnMutualTlsInput;
+  email?: EmailMutualTlsInput;
+  uri?: UriMutualTlsInput;
+  ip?: IpMutualTlsInput;
+  dns?: DnsMutualTlsInput;
+}
+
+export interface DnMutualTlsInput {
+  client_dn: string;
+  trusted_cas: string[];
+  rdns_to_match: string[];
+}
+
+export interface EmailMutualTlsInput {
+  client_email: string;
+  trusted_cas: string[];
+}
+
+export interface UriMutualTlsInput {
+  client_uri: string;
+  trusted_cas: string[];
+}
+
+export interface IpMutualTlsInput {
+  client_ip: string;
+  trusted_cas: string[];
+}
+
+export interface DnsMutualTlsInput {
+  client_dns: string;
+  trusted_cas: string[];
+}
+
+export interface PinnedCertificateInput {
+  client_certificate_id: string;
+}
+
+export interface AsymmetricKeyInput {
+  asymmetric_key_id: string;
+}
+
+export interface SymmetricKeyInput {
+  symmetric_key: string;
+}
+
+export interface CredentialManagerInput {
+  credential_manager_id: string;
+}
+
+export interface SecretInput {
+  secret: string;
+}
+
+export interface AsymmetricKey {
+  asymmetric_key_id: string;
+}
+
+export interface SymmetricKey {
+  symmetric_key: string;
+}
+
+export interface CredentialManager {
+  credential_manager_id: string;
+}
+
+export interface Secret {
+  secret: string;
+}
+
+export enum NoAuth {
+  no_auth = 'no_auth',
+}
+
+export interface UserConsent {
+  allow_deselection: boolean | null;
+  consentors: string[];
+  only_consentors: boolean | null;
+}
+
+export interface DatabaseClientCapabilities {
+  assertion: AssertionCapability | null;
+  assisted_token: AssistedTokenCapability | null;
+  backchannel: BackchannelAuthenticationCapability | null;
+  client_credentials: ClientCredentialsCapability | null;
+  code: CodeCapability | null;
+  haapi: HaapiCapability | null;
+  implicit: ImplicitCapability | null;
+  introspection: IntrospectionCapability | null;
+  resource_owner_password: ResourceOwnerPasswordCredentialsCapability | null;
+  token_exchange: TokenExchangeCapability | null;
+}
+
+export interface HaapiCapability {
+  client_attestation: DatabaseClientAttestation;
+  type: DatabaseClientHaapi;
+  use_legacy_dpop: boolean;
+}
+
+export enum Web {
+  WEB = 'WEB',
+}
+
+export enum Android {
+  ANDROID = 'ANDROID',
+}
+
+export enum Ios {
+  IOS = 'IOS',
+}
+
+export enum Disable {
+  DISABLE = 'DISABLE',
+}
+
+export interface DatabaseClientAttestation {
+  android?: AndroidAttestation;
+  ios?: IosAttestation;
+  no_attestation?: NoAttestation;
+  web?: WebAttestation;
+}
+
+export interface AndroidAttestation {
+  type: Android;
+  policy_id: string | null;
+  package_names: string[];
+  signature_fingerprints: string[];
+}
+
+export interface IosAttestation {
+  type: Ios;
+  app_id: string;
+  policy_id: string | null;
+}
+
+export interface NoAttestation {
+  type: Disable;
+}
+
+export interface WebAttestation {
+  type: Web;
+  policy_id: string | null;
+}
+
+export enum DatabaseClientHaapi {
+  HAAPI = 'HAAPI',
+}
+
+export interface TokenExchangeCapability {
+  type: TokenExchange;
+}
+
+export enum TokenExchange {
+  TOKEN_EXCHANGE = 'TOKEN_EXCHANGE',
+}
+
+export interface CodeCapability {
+  proof_key: ProofKey | null;
+  require_pushed_authorization_request: boolean | null;
+  type: Code;
+}
+
+export enum Code {
+  CODE = 'CODE',
+}
+
+export interface ProofKey {
+  disallow_challenge_method_plain: boolean;
+  disallow_challenge_method_s256: boolean;
+  require_proof_key: boolean;
+}
+
+export interface ImplicitCapability {
+  type: Implicit;
+}
+
+export enum Implicit {
+  IMPLICIT = 'IMPLICIT',
+}
+
+export interface ResourceOwnerPasswordCredentialsCapability {
+  credential_manager_id: string | null;
+  type: ResourceOwnerPasswordCredentials;
+}
+
+export enum ResourceOwnerPasswordCredentials {
+  ROPC = 'ROPC',
+}
+
+export interface AssertionCapability {
+  jwt: JwtAssertion;
+  type: Assertion;
+}
+
+export enum Assertion {
+  ASSERTION = 'ASSERTION',
+}
+
+export interface ClientCredentialsCapability {
+  type: ClientCredentials;
+}
+
+export enum ClientCredentials {
+  CLIENT_CREDENTIALS = 'CLIENT_CREDENTIALS',
+}
+
+export interface JwtAssertion {
+  allow_reuse: boolean;
+  issuer: string | null;
+  signing: JwtSigning;
+}
+
+export interface JwksUri {
+  http_client_id: string | null;
+  uri: string;
+}
+
+export interface JwtSigning {
+  asymmetric_key_id?: string;
+  symmetric_key?: string;
+  jwks?: JwksUri;
+}
+
+export interface AssistedTokenCapability {
+  type: AssistedToken;
+}
+
+export enum AssistedToken {
+  ASSISTED_TOKEN = 'ASSISTED_TOKEN',
+}
+
+export interface BackchannelAuthenticationCapability {
+  allowed_backchannel_authenticators: string[];
+  type: BackchannelAuthentication;
+}
+
+export enum BackchannelAuthentication {
+  BACKCHANNEL_AUTHENTICATION = 'BACKCHANNEL_AUTHENTICATION',
+}
+
+export interface IntrospectionCapability {
+  type: Introspection;
+}
+
+export enum Introspection {
+  INTROSPECTION = 'INTROSPECTION',
+}
+
+export interface RefreshToken {
+  refresh_token_max_rolling_lifetime: number | null;
+  refresh_token_ttl: number;
+  reuse_refresh_tokens: boolean | null;
+}
+
+export type MutualTls =
+  | DnMutualTls
+  | DnsMutualTls
+  | EmailMutualTls
+  | IpMutualTls
+  | PinnedCertificate
+  | TrustedCaOnly
+  | UriMutualTls;
+
+export interface PinnedCertificate {
+  client_certificate_id: string;
+}
+
+export interface NameAndCa {
+  trusted_cas: string[];
+}
+
+export type TrustedCaOnly = NameAndCa;
+
+export interface DnMutualTls extends NameAndCa {
+  client_dn: string;
+  rdns_to_match: string[];
+}
+
+export interface EmailMutualTls extends NameAndCa {
+  client_email: string;
+}
+
+export interface UriMutualTls extends NameAndCa {
+  client_uri: string;
+}
+
+export interface IpMutualTls extends NameAndCa {
+  client_ip: string;
+}
+
+export interface DnsMutualTls extends NameAndCa {
+  client_dns: string;
+}

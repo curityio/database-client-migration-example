@@ -10,9 +10,9 @@
  */
 
 import {
-  AsymmetricKeyManagementAlgorithmType,
-  ContentEncryptionAlgorithmType,
-} from './algorithms.js';
+  AsymmetricKeyManagementAlgorithm,
+  ContentEncryptionAlgorithm,
+} from './databaseClient.js';
 
 export interface ConfigurationClient {
   'access-token-ttl': number;
@@ -86,9 +86,9 @@ export interface MutualTls {
 }
 
 export interface IdTokenEncryption {
-  'content-encryption-algorithm': ContentEncryptionAlgorithmType;
+  'content-encryption-algorithm': ContentEncryptionAlgorithm;
   'encryption-key': string;
-  'key-management-algorithm': AsymmetricKeyManagementAlgorithmType;
+  'key-management-algorithm': AsymmetricKeyManagementAlgorithm;
 }
 
 export interface SignedUserinfo {

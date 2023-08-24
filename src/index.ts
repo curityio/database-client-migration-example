@@ -37,7 +37,7 @@ try {
             if (!isClientToIgnore(configClient.id)) {
 
                 console.log(`Migrating OAuth client '${configClient.id}' ...`);
-                const databaseClient = mapper.convertToDatabaseClient(configClient);
+                const databaseClient = mapper.convertToDatabaseClient(environment.migrationClientId, configClient);
                 await graphqlClient.saveClient(databaseClient);
                 console.log(`OAuth client '${configClient.id}' was succesfully migrated to database storage`);
             }
