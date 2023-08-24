@@ -17,6 +17,8 @@ import {
     Assertion,
     AssistedToken,
     BackchannelAuthentication,
+    ClientAuthentication,
+    ClientAuthenticationVerifier,
     ClientCredentials,
     Code,
     DatabaseClient, 
@@ -47,13 +49,13 @@ export class ClientMapper {
             audiences: configClient['audience'] || [],
             capabilities: {} as any,
             claim_mapper_id: configClient['claims-mapper'] || null,
-            client_authentication: {} as any,
+            client_authentication: this.getClientAuthentication(configClient),
             client_id: configClient['id'],
             description: configClient['description'] || null,
             id_token: null,
             logo_uri: configClient['logo'] || null,
             name: configClient['client-name'] || '',
-            owner,
+            owner: '',
             policy_uri: configClient['privacy-policy-url'] || null,
             properties: {},
             redirect_uri_validation_policy_id: configClient['redirect-uri-validation-policy'] || null,
@@ -74,14 +76,14 @@ export class ClientMapper {
 
         // Apply any logic to update placeholders, for more complex translations
         this.setCapabilities(databaseClient, configClient);
-        this.setClientAuthentication(databaseClient, configClient);
         this.setIdToken(databaseClient, configClient);
         this.setPPIDs(databaseClient, configClient);
         this.setProperties(databaseClient, configClient);
         this.setRefreshToken(databaseClient, configClient);
         this.setRequestObject(databaseClient, configClient);
         this.setUserAuthentication(databaseClient, configClient);
-
+        
+        delete (databaseClient as any).owner;
         return databaseClient;
     }
 
@@ -233,103 +235,109 @@ export class ClientMapper {
         }
     }
 
-    private setClientAuthentication(databaseClient: DatabaseClient, configClient: ConfigurationClient): void {
+    private getClientAuthentication(configClient: ConfigurationClient): ClientAuthentication {
 
-        databaseClient.client_authentication = {
-            primary: {} as any,
-            secondary: null,
-            secondary_verifier_expiration: null,
+        const secondary = configClient['secondary-authentication-method']
+        return {
+            primary: this.getPrimaryClientAuthentication(configClient),
+            secondary: this.getSecondaryClientAuthentication(configClient),
+            secondary_verifier_expiration: secondary?.['expires-on'] ? Date.parse(secondary['expires-on']) / 1000.0 : null,
         };
+    }
+
+    private getPrimaryClientAuthentication(configClient: ConfigurationClient): ClientAuthenticationVerifier {
 
         if (configClient['asymmetric-key']) {
 
-            databaseClient.client_authentication.primary = {
+            return {
                 asymmetric_key_id: configClient['asymmetric-key'],
             };
 
         } else if (configClient['credential-manager']) {
 
-            databaseClient.client_authentication.primary = {
+            return {
                 credential_manager_id: configClient['credential-manager'],
             };
 
         } else if (configClient['mutual-tls']) {
 
-            databaseClient.client_authentication.primary = {
-                mutual_tls: this.getMutualTlsDetails(configClient['mutual-tls']),
-            }
+            return {
+                mutual_tls: this.getMutualTls(configClient['mutual-tls']),
+            };
 
         } else if (configClient['mutual-tls-by-proxy']) {
 
-            databaseClient.client_authentication.primary = {
-                mutual_tls_by_proxy: this.getMutualTlsDetails(configClient['mutual-tls-by-proxy']),
-            }
+            return {
+                mutual_tls_by_proxy: this.getMutualTls(configClient['mutual-tls-by-proxy']),
+            };
 
         } else if (configClient['secret']) {
 
-            databaseClient.client_authentication.primary = {
-                secret: configClient['secret'],
+            return {
+                secret: {
+                    secret: configClient['secret'],
+                } as any,
             };
 
         } else if (configClient['symmetric-key']) {
 
-            databaseClient.client_authentication.primary = {
+            return {
                 symmetric_key: configClient['symmetric-key'],
             };
 
         } else {
 
             // JWKS URI is unsupported for database clients, and is migrated with a type of no-authentication
-            databaseClient.client_authentication.primary = {
-                no_authentication: NoAuth.NoAuth,
+            return {
+                no_authentication: new EnumType(NoAuth.NoAuth) as any,
             }
         }
+    }
+
+    private getSecondaryClientAuthentication(configClient: ConfigurationClient): ClientAuthenticationVerifier | null {
 
         // No authentication cannot be used for the secondary method, so do not set secondary details if JWKS URI is configured
         const secondary = configClient['secondary-authentication-method']
         if (secondary && !secondary['jwks-uri'] && !secondary['no-authentication']) {
 
-            if (secondary['expires-on']) {
-                databaseClient.client_authentication.secondary_verifier_expiration = Date.parse(secondary['expires-on']) / 1000.0;
-            }
-
             if (secondary['asymmetric-key']) {
 
-                databaseClient.client_authentication.secondary = {
+                return {
                     asymmetric_key_id: secondary['asymmetric-key'],
                 };
     
             } else if (secondary['credential-manager']) {
     
-                databaseClient.client_authentication.secondary = {
+                return {
                     credential_manager_id: secondary['credential-manager'],
                 };
     
             } else if (secondary['mutual-tls']) {
     
-                databaseClient.client_authentication.secondary = {
-                    mutual_tls: this.getMutualTlsDetails(secondary['mutual-tls']),
-                }
+                return {
+                    mutual_tls: this.getMutualTls(secondary['mutual-tls']),
+                };
     
             } else if (secondary['mutual-tls-by-proxy']) {
-    
-                databaseClient.client_authentication.secondary = {
-                    mutual_tls_by_proxy:  this.getMutualTlsDetails(secondary['mutual-tls-by-proxy']),
-                }
+
+                return {
+                    mutual_tls_by_proxy: this.getMutualTls(secondary['mutual-tls-by-proxy']),
+                };
     
             } else if (secondary['secret']) {
     
-                databaseClient.client_authentication.secondary = {
+                return {
                     secret: secondary['secret'],
                 };
     
             } else if (secondary['symmetric-key']) {
     
-                databaseClient.client_authentication.secondary = {
+                return {
                     symmetric_key: secondary['symmetric-key'],
                 };
             }
         }
+        return null;
     }
 
     private getAssertionSigning(configClient: ConfigurationClient): JwtSigning {
@@ -480,50 +488,50 @@ export class ClientMapper {
         }
     }
 
-    private getMutualTlsDetails(source: ConfigClientMutualTls): MutualTls {
+    private getMutualTls(configClient: ConfigClientMutualTls): MutualTls {
 
-        const trustedCas = source['trusted-ca'] ? [source['trusted-ca']] : [];
+        const trustedCas = configClient['trusted-ca'] ? [configClient['trusted-ca']] : [];
 
-        if (source['client-dn']) {
+        if (configClient['client-dn']) {
 
             return {
-                client_dn: source['client-dn'],
+                client_dn: configClient['client-dn'],
                 rdns_to_match: [], // TOFIX
                 trusted_cas: trustedCas,
             };
 
-        } else if (source['client-dns-name']) {
+        } else if (configClient['client-dns-name']) {
 
             return {
-                client_dns: source['client-dns-name'],
+                client_dns: configClient['client-dns-name'],
                 trusted_cas: trustedCas,
             }
 
-        }  else if (source['client-uri']) {
+        }  else if (configClient['client-uri']) {
 
             return {
-                client_uri: source['client-uri'],
+                client_uri: configClient['client-uri'],
                 trusted_cas: trustedCas,
             }
 
-        } else if (source['client-ip']) {
+        } else if (configClient['client-ip']) {
 
             return {
-                client_ip: source['client-ip'],
+                client_ip: configClient['client-ip'],
                 trusted_cas: trustedCas,
             }
 
-        } else if (source['client-email']) {
+        } else if (configClient['client-email']) {
 
             return {
-                client_email: source['client-email'],
+                client_email: configClient['client-email'],
                 trusted_cas: trustedCas,
             }
 
-        } else if (source['client-certificate']) {
+        } else if (configClient['client-certificate']) {
 
             return {
-                client_certificate_id: source['client-certificate'],
+                client_certificate_id: configClient['client-certificate'],
             };
 
         } else {
