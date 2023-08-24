@@ -17,19 +17,19 @@ import {
     Assertion,
     AssistedToken,
     BackchannelAuthentication,
-    ClientAuthentication,
     ClientAuthenticationInput,
     ClientAuthenticationVerifierInput,
     ClientCredentials,
     Code,
-    DatabaseClient, 
+    CreateDatabaseClientInput,
+    DatabaseClientCreateFields, 
     DatabaseClientStatus,
     Disable,
     Haapi,
     Implicit,
     Introspection,
     Ios,
-    JwtSigning,
+    JwtSigningInput,
     MutualTlsInput,
     NoAuth,
     ResourceOwnerPasswordCredentials,
@@ -39,55 +39,55 @@ import {
 
 export class ClientMapper {
 
-    public convertToDatabaseClient(owner: string, configClient: ConfigurationClient): DatabaseClient {
+    public convertToDatabaseClient(configClient: ConfigurationClient): CreateDatabaseClientInput {
 
-        const databaseClient: DatabaseClient = {
-            access_token_ttl: configClient['access-token-ttl'] || null,
-            allow_per_request_redirect_uris: configClient.capabilities?.code?.['require-pushed-authorization-requests']?.['allow-per-request-redirect-uris'] || null,
-            allowed_origins: configClient['allowed-origins'] || null,
-            application_url: configClient['application-url'] || null,
-            audiences: configClient['audience'] || [],
-            capabilities: {} as any,
-            claim_mapper_id: configClient['claims-mapper'] || null,
-            client_authentication: this.getClientAuthentication(configClient) as ClientAuthentication,
-            client_id: configClient['id'],
-            description: configClient['description'] || null,
-            id_token: null,
-            logo_uri: configClient['logo'] || null,
-            name: configClient['client-name'] || '',
-            owner: '',
-            policy_uri: configClient['privacy-policy-url'] || null,
-            properties: {},
-            redirect_uri_validation_policy_id: configClient['redirect-uri-validation-policy'] || null,
-            redirect_uris: configClient['redirect-uris'] || null,
-            refresh_token: null,
-            request_object: null,
-            require_secured_authorization_response: Array.isArray(configClient['require-secured-authorization-response']) ? true : false,
-            scopes: configClient['scope'] || [],
-            sector_identifier: null,
-            status: configClient['enabled'] === false ? new EnumType(DatabaseClientStatus.Inactive) as any : new EnumType(DatabaseClientStatus.Active) as any,
-            subject_type: new EnumType(SubjectType.Public) as any,
-            tags: [],
-            user_authentication: null,
-            userinfo_signed_issuer_id: configClient['signed-userinfo']?.['userinfo-token-issuer'] || null,
-            tos_uri: configClient['terms-of-service-url'] || null,
-            validate_port_on_loopback_interfaces: configClient['validate-port-on-loopback-interfaces'] || null,
+        const databaseClient: CreateDatabaseClientInput = {
+            fields: {
+                access_token_ttl: configClient['access-token-ttl'] || null,
+                allow_per_request_redirect_uris: configClient.capabilities?.code?.['require-pushed-authorization-requests']?.['allow-per-request-redirect-uris'] || null,
+                allowed_origins: configClient['allowed-origins'] || null,
+                application_url: configClient['application-url'] || null,
+                audiences: configClient['audience'] || [],
+                capabilities: {} as any,
+                claim_mapper_id: configClient['claims-mapper'] || null,
+                client_authentication: this.getClientAuthentication(configClient),
+                client_id: configClient['id'],
+                description: configClient['description'] || null,
+                id_token: null,
+                logo_uri: configClient['logo'] || null,
+                name: configClient['client-name'] || '',
+                policy_uri: configClient['privacy-policy-url'] || null,
+                properties: {},
+                redirect_uri_validation_policy_id: configClient['redirect-uri-validation-policy'] || null,
+                redirect_uris: configClient['redirect-uris'] || null,
+                refresh_token: null,
+                request_object: null,
+                require_secured_authorization_response: Array.isArray(configClient['require-secured-authorization-response']) ? true : false,
+                scopes: configClient['scope'] || [],
+                sector_identifier: null,
+                status: configClient['enabled'] === false ? new EnumType(DatabaseClientStatus.Inactive) as any : new EnumType(DatabaseClientStatus.Active) as any,
+                subject_type: new EnumType(SubjectType.Public) as any,
+                tags: [],
+                user_authentication: null,
+                userinfo_signed_issuer_id: configClient['signed-userinfo']?.['userinfo-token-issuer'] || null,
+                tos_uri: configClient['terms-of-service-url'] || null,
+                validate_port_on_loopback_interfaces: configClient['validate-port-on-loopback-interfaces'] || null,
+            }
         };
 
         // Apply any logic to update placeholders, for more complex translations
-        this.setCapabilities(databaseClient, configClient);
-        this.setIdToken(databaseClient, configClient);
-        this.setPPIDs(databaseClient, configClient);
-        this.setProperties(databaseClient, configClient);
-        this.setRefreshToken(databaseClient, configClient);
-        this.setRequestObject(databaseClient, configClient);
-        this.setUserAuthentication(databaseClient, configClient);
+        this.setCapabilities(databaseClient.fields, configClient);
+        this.setIdToken(databaseClient.fields, configClient);
+        this.setPPIDs(databaseClient.fields, configClient);
+        this.setProperties(databaseClient.fields, configClient);
+        this.setRefreshToken(databaseClient.fields, configClient);
+        this.setRequestObject(databaseClient.fields, configClient);
+        this.setUserAuthentication(databaseClient.fields, configClient);
         
-        delete (databaseClient as any).owner;
         return databaseClient;
     }
 
-    private setCapabilities(databaseClient: DatabaseClient, configClient: ConfigurationClient): void {
+    private setCapabilities(databaseClient: DatabaseClientCreateFields, configClient: ConfigurationClient): void {
 
         databaseClient.capabilities = {
             assertion: null,
@@ -173,9 +173,10 @@ export class ClientMapper {
 
             if (configClient.attestation) {
 
+                databaseClient.capabilities.haapi.client_attestation = {};
                 if (configClient.attestation.android) {
 
-                    databaseClient.capabilities.haapi.client_attestation = {
+                    databaseClient.capabilities.haapi.client_attestation.android = {
                         type: new EnumType(Android.Android) as any,
                         policy_id: configClient.attestation?.android?.['android-policy'] || null,
                         package_names: configClient.attestation?.android?.['package-name'] || [],
@@ -184,7 +185,7 @@ export class ClientMapper {
 
                 } else if (configClient.attestation.ios) {
 
-                    databaseClient.capabilities.haapi.client_attestation = {
+                    databaseClient.capabilities.haapi.client_attestation.ios = {
                         type: new EnumType(Ios.Ios) as any,
                         app_id: configClient.attestation.ios['app-id'],
                         policy_id: configClient.attestation.ios?.['ios-policy'] || null,
@@ -192,14 +193,14 @@ export class ClientMapper {
 
                 } else if (configClient.attestation.web) {
                     
-                    databaseClient.capabilities.haapi.client_attestation = {
+                    databaseClient.capabilities.haapi.client_attestation.web = {
                         type: new EnumType(Web.Web) as any,
                         policy_id: configClient.attestation.web?.['web-policy'] || null,
                     };
 
                 } else {
 
-                    databaseClient.capabilities.haapi.client_attestation = {
+                    databaseClient.capabilities.haapi.client_attestation.no_attestation = {
                         type: new EnumType(Disable.Disable) as any,
                     };
                 }
@@ -421,30 +422,36 @@ export class ClientMapper {
         }
     }
 
-    private getAssertionSigning(configClient: ConfigurationClient): JwtSigning {
+    private getAssertionSigning(configClient: ConfigurationClient): JwtSigningInput {
 
         if (configClient.capabilities.assertion?.jwt?.trust?.['asymmetric-signing-key']) {
 
             return {
-                asymmetric_key_id: configClient.capabilities.assertion?.jwt?.trust?.['asymmetric-signing-key'] || '',
+                asymmetric_key: {
+                    asymmetric_key_id: configClient.capabilities.assertion?.jwt?.trust?.['asymmetric-signing-key'] || '',
+                },
             };
 
         } else if (configClient.capabilities.assertion?.jwt.trust['jwks-uri']) {
 
             return {
-                http_client_id: configClient.capabilities.assertion?.jwt.trust['jwks-uri']?.['http-client'] || null,
-                uri: configClient.capabilities.assertion?.jwt.trust['jwks-uri']?.uri,
+                jwks: {
+                    http_client_id: configClient.capabilities.assertion?.jwt.trust['jwks-uri']?.['http-client'] || null,
+                    uri: configClient.capabilities.assertion?.jwt.trust['jwks-uri']?.uri,
+                },
             };
 
         } else {
 
             return {
-                symmetric_key: configClient['symmetric-key'] || '',
+                symmetric_key: {
+                    symmetric_key: configClient['symmetric-key'] || '',
+                },
             }
         }
     }
 
-    private setIdToken(databaseClient: DatabaseClient, configClient: ConfigurationClient): void {
+    private setIdToken(databaseClient: DatabaseClientCreateFields, configClient: ConfigurationClient): void {
 
         const idTokenTtl = configClient['id-token-ttl'];
         const idTokenEncryption = configClient['id-token-encryption'];
@@ -471,7 +478,7 @@ export class ClientMapper {
         }
     }
 
-    private setPPIDs(databaseClient: DatabaseClient, configClient: ConfigurationClient): void {
+    private setPPIDs(databaseClient: DatabaseClientCreateFields, configClient: ConfigurationClient): void {
 
         const usePPIDs = configClient['use-pairwise-subject-identifiers'];
         if (usePPIDs) {
@@ -480,14 +487,14 @@ export class ClientMapper {
         }
     }
 
-    private setProperties(databaseClient: DatabaseClient, configClient: ConfigurationClient): void {
+    private setProperties(databaseClient: DatabaseClientCreateFields, configClient: ConfigurationClient): void {
 
         configClient['properties']?.property.forEach((p) => {
             databaseClient.properties[p.key] = p.value;
         });
     }
 
-    private setRefreshToken(databaseClient: DatabaseClient, configClient: ConfigurationClient): void {
+    private setRefreshToken(databaseClient: DatabaseClientCreateFields, configClient: ConfigurationClient): void {
 
         const refreshTokenTtl = this.getNumberSafe(configClient['refresh-token-ttl']);
         const refreshTokenMaxRollingLifetime = this.getNumberSafe(configClient['refresh-token-max-rolling-lifetime']);
@@ -513,7 +520,7 @@ export class ClientMapper {
         }
     }
 
-    private setRequestObject(databaseClient: DatabaseClient, configClient: ConfigurationClient): void {
+    private setRequestObject(databaseClient: DatabaseClientCreateFields, configClient: ConfigurationClient): void {
 
         const source = configClient['request-object'];
         if (source) {
@@ -536,7 +543,7 @@ export class ClientMapper {
         }
     }
 
-    private setUserAuthentication(databaseClient: DatabaseClient, configClient: ConfigurationClient): void {
+    private setUserAuthentication(databaseClient: DatabaseClientCreateFields, configClient: ConfigurationClient): void {
 
         const source = configClient['user-authentication'];
         if (source) {

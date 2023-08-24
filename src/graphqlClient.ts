@@ -10,7 +10,7 @@
  */
 
 import {jsonToGraphQLQuery} from 'json-to-graphql-query';
-import {DatabaseClient} from './data/databaseClient.js';
+import {CreateDatabaseClientInput} from './data/databaseClient.js';
 import {Environment} from './environment.js';
 import {getHttpErrorAsText, getGraphqlErrorAsText} from './utils.js'
 
@@ -49,15 +49,13 @@ export class GraphqlClient {
         this.accessToken = tokens.access_token;
     }
 
-    public async saveClient(databaseClient: DatabaseClient): Promise<void> {
+    public async saveClient(databaseClient: CreateDatabaseClientInput): Promise<void> {
 
         const command = {
             mutation: {
                 createDatabaseClient: {
                     __args: {
-                        input: {
-                            fields: databaseClient,
-                        },
+                        input: databaseClient,
                     },
                     client: {
                         client_id: true,
