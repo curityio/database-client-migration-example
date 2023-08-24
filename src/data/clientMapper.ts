@@ -18,7 +18,7 @@ import {
     AssistedToken,
     BackchannelAuthentication,
     ClientAuthentication,
-    ClientAuthenticationVerifier,
+    ClientAuthenticationInput,
     ClientAuthenticationVerifierInput,
     ClientCredentials,
     Code,
@@ -49,7 +49,7 @@ export class ClientMapper {
             audiences: configClient['audience'] || [],
             capabilities: {} as any,
             claim_mapper_id: configClient['claims-mapper'] || null,
-            client_authentication: this.getClientAuthentication(configClient),
+            client_authentication: this.getClientAuthentication(configClient) as ClientAuthentication,
             client_id: configClient['id'],
             description: configClient['description'] || null,
             id_token: null,
@@ -235,12 +235,12 @@ export class ClientMapper {
         }
     }
 
-    private getClientAuthentication(configClient: ConfigurationClient): ClientAuthentication {
+    private getClientAuthentication(configClient: ConfigurationClient): ClientAuthenticationInput {
 
         const secondary = configClient['secondary-authentication-method']
         return {
-            primary: this.getPrimaryClientAuthentication(configClient) as ClientAuthenticationVerifier,
-            secondary: this.getSecondaryClientAuthentication(configClient) as ClientAuthenticationVerifier,
+            primary: this.getPrimaryClientAuthentication(configClient),
+            secondary: this.getSecondaryClientAuthentication(configClient),
             secondary_verifier_expiration: secondary?.['expires-on'] ? Date.parse(secondary['expires-on']) / 1000.0 : null,
         };
     }
