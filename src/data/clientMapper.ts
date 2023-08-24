@@ -89,7 +89,7 @@ export class ClientMapper {
 
     private setCapabilities(databaseClient: DatabaseClient, configClient: ConfigurationClient): void {
 
-        const capabilities = {
+        databaseClient.capabilities = {
             assertion: null,
             assisted_token: null,
             backchannel: null,
