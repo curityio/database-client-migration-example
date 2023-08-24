@@ -81,7 +81,6 @@ export class GraphqlClient {
     private async runGraphqlCommand(name: string, command: any): Promise<any> {
         
         const commandText = jsonToGraphQLQuery(command, { pretty: true });
-        console.log(commandText);
 
         const response = await fetch(this.environment.graphqlClientManagementEndpoint, {
             method: 'POST',

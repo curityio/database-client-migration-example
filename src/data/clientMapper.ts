@@ -19,6 +19,7 @@ import {
     BackchannelAuthentication,
     ClientAuthentication,
     ClientAuthenticationVerifier,
+    ClientAuthenticationVerifierInput,
     ClientCredentials,
     Code,
     DatabaseClient, 
@@ -29,7 +30,7 @@ import {
     Introspection,
     Ios,
     JwtSigning,
-    MutualTls,
+    MutualTlsInput,
     NoAuth,
     ResourceOwnerPasswordCredentials,
     SubjectType,
@@ -40,7 +41,6 @@ export class ClientMapper {
 
     public convertToDatabaseClient(owner: string, configClient: ConfigurationClient): DatabaseClient {
 
-        // Set easily derivable values, with placeholders for more complex objects such as capabilities
         const databaseClient: DatabaseClient = {
             access_token_ttl: configClient['access-token-ttl'] || null,
             allow_per_request_redirect_uris: configClient.capabilities?.code?.['require-pushed-authorization-requests']?.['allow-per-request-redirect-uris'] || null,
@@ -89,7 +89,7 @@ export class ClientMapper {
 
     private setCapabilities(databaseClient: DatabaseClient, configClient: ConfigurationClient): void {
 
-        databaseClient.capabilities = {
+        const capabilities = {
             assertion: null,
             assisted_token: null,
             backchannel: null,
@@ -239,24 +239,28 @@ export class ClientMapper {
 
         const secondary = configClient['secondary-authentication-method']
         return {
-            primary: this.getPrimaryClientAuthentication(configClient),
-            secondary: this.getSecondaryClientAuthentication(configClient),
+            primary: this.getPrimaryClientAuthentication(configClient) as ClientAuthenticationVerifier,
+            secondary: this.getSecondaryClientAuthentication(configClient) as ClientAuthenticationVerifier,
             secondary_verifier_expiration: secondary?.['expires-on'] ? Date.parse(secondary['expires-on']) / 1000.0 : null,
         };
     }
 
-    private getPrimaryClientAuthentication(configClient: ConfigurationClient): ClientAuthenticationVerifier {
+    private getPrimaryClientAuthentication(configClient: ConfigurationClient): ClientAuthenticationVerifierInput {
 
         if (configClient['asymmetric-key']) {
 
             return {
-                asymmetric_key_id: configClient['asymmetric-key'],
+                asymmetric: {
+                    asymmetric_key_id: configClient['asymmetric-key'],
+                },
             };
 
         } else if (configClient['credential-manager']) {
 
             return {
-                credential_manager_id: configClient['credential-manager'],
+                credential_manager: {
+                    credential_manager_id: configClient['credential-manager'],
+                },
             };
 
         } else if (configClient['mutual-tls']) {
@@ -276,13 +280,15 @@ export class ClientMapper {
             return {
                 secret: {
                     secret: configClient['secret'],
-                } as any,
+                },
             };
 
         } else if (configClient['symmetric-key']) {
 
             return {
-                symmetric_key: configClient['symmetric-key'],
+                symmetric: {
+                    symmetric_key: configClient['symmetric-key'],
+                },
             };
 
         } else {
@@ -290,11 +296,11 @@ export class ClientMapper {
             // JWKS URI is unsupported for database clients, and is migrated with a type of no-authentication
             return {
                 no_authentication: new EnumType(NoAuth.NoAuth) as any,
-            }
+            };
         }
     }
 
-    private getSecondaryClientAuthentication(configClient: ConfigurationClient): ClientAuthenticationVerifier | null {
+    private getSecondaryClientAuthentication(configClient: ConfigurationClient): ClientAuthenticationVerifierInput | null {
 
         // No authentication cannot be used for the secondary method, so do not set secondary details if JWKS URI is configured
         const secondary = configClient['secondary-authentication-method']
@@ -303,13 +309,17 @@ export class ClientMapper {
             if (secondary['asymmetric-key']) {
 
                 return {
-                    asymmetric_key_id: secondary['asymmetric-key'],
+                    asymmetric: {
+                        asymmetric_key_id: secondary['asymmetric-key'],
+                    },
                 };
     
             } else if (secondary['credential-manager']) {
     
                 return {
-                    credential_manager_id: secondary['credential-manager'],
+                    credential_manager: {
+                        credential_manager_id: secondary['credential-manager'],
+                    },
                 };
     
             } else if (secondary['mutual-tls']) {
@@ -327,17 +337,88 @@ export class ClientMapper {
             } else if (secondary['secret']) {
     
                 return {
-                    secret: secondary['secret'],
+                    secret: {
+                        secret: secondary['secret'],
+                    },
                 };
     
             } else if (secondary['symmetric-key']) {
     
                 return {
-                    symmetric_key: secondary['symmetric-key'],
+                    symmetric: {
+                        symmetric_key: secondary['symmetric-key'],
+                    },
                 };
             }
         }
         return null;
+    }
+
+
+    private getMutualTls(configClient: ConfigClientMutualTls): MutualTlsInput {
+
+        const trustedCas = configClient['trusted-ca'] ? [configClient['trusted-ca']] : [];
+
+        if (configClient['client-dn']) {
+
+            return {
+                dn: {
+                    client_dn: configClient['client-dn'],
+                    rdns_to_match: [], // TOFIX
+                    trusted_cas: trustedCas,
+                },
+            };
+
+        } else if (configClient['client-dns-name']) {
+
+            return {
+                dns: {
+                    client_dns: configClient['client-dns-name'],
+                    trusted_cas: trustedCas,
+                },
+            }
+
+        }  else if (configClient['client-uri']) {
+
+            return {
+                uri: {
+                    client_uri: configClient['client-uri'],
+                    trusted_cas: trustedCas,
+                },
+            }
+
+        } else if (configClient['client-ip']) {
+
+            return {
+                ip: {
+                    client_ip: configClient['client-ip'],
+                    trusted_cas: trustedCas,
+                },
+            }
+
+        } else if (configClient['client-email']) {
+
+            return {
+                email: {
+                    client_email: configClient['client-email'],
+                    trusted_cas: trustedCas,
+                },
+            }
+
+        } else if (configClient['client-certificate']) {
+
+            return {
+                pinned_certificate: {
+                    client_certificate_id: configClient['client-certificate'],
+                },
+            };
+
+        } else {
+
+            return {
+                trusted_cas: trustedCas,
+            }
+        }
     }
 
     private getAssertionSigning(configClient: ConfigurationClient): JwtSigning {
@@ -484,60 +565,6 @@ export class ClientMapper {
                     only_consentors: consent['only-consentors'],
                     consentors: consent.consentors?.consentor || [],
                 }
-            }
-        }
-    }
-
-    private getMutualTls(configClient: ConfigClientMutualTls): MutualTls {
-
-        const trustedCas = configClient['trusted-ca'] ? [configClient['trusted-ca']] : [];
-
-        if (configClient['client-dn']) {
-
-            return {
-                client_dn: configClient['client-dn'],
-                rdns_to_match: [], // TOFIX
-                trusted_cas: trustedCas,
-            };
-
-        } else if (configClient['client-dns-name']) {
-
-            return {
-                client_dns: configClient['client-dns-name'],
-                trusted_cas: trustedCas,
-            }
-
-        }  else if (configClient['client-uri']) {
-
-            return {
-                client_uri: configClient['client-uri'],
-                trusted_cas: trustedCas,
-            }
-
-        } else if (configClient['client-ip']) {
-
-            return {
-                client_ip: configClient['client-ip'],
-                trusted_cas: trustedCas,
-            }
-
-        } else if (configClient['client-email']) {
-
-            return {
-                client_email: configClient['client-email'],
-                trusted_cas: trustedCas,
-            }
-
-        } else if (configClient['client-certificate']) {
-
-            return {
-                client_certificate_id: configClient['client-certificate'],
-            };
-
-        } else {
-
-            return {
-                trusted_cas: trustedCas,
             }
         }
     }
