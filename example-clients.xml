@@ -9,7 +9,7 @@
                     <client-store>
                         <config-backed>
                             <client>
-                                <id>haapi-ios-dev-client</id>
+                                <id>haapi-ios-client</id>
                                 <client-name>Haapi iOS Client</client-name>
                                 <no-authentication>true</no-authentication>
                                 <redirect-uris>haapi:start</redirect-uris>

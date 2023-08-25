@@ -1,2 +1,5 @@
 node_modules
 .DS_Store
+typegenerator/data.txt
+typegenerator/schema.graphql
+typegenerator/databaseClient.ts
