@@ -45,7 +45,7 @@ export class ClientMapper {
 
     public convertToDatabaseClient(configClient: ConfigurationClient): CreateDatabaseClientInput {
 
-        const databaseClient: CreateDatabaseClientInput = {
+        return {
             fields: {
                 access_token_ttl: configClient['access-token-ttl'] || null,
                 allow_per_request_redirect_uris: configClient.capabilities?.code?.['require-pushed-authorization-requests']?.['allow-per-request-redirect-uris'] || null,
@@ -78,8 +78,6 @@ export class ClientMapper {
                 validate_port_on_loopback_interfaces: configClient['validate-port-on-loopback-interfaces'] || null,
             }
         };
-        
-        return databaseClient;
     }
 
     private getCapabilities(configClient: ConfigurationClient): CapabilitiesInput {
