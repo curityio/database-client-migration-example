@@ -9,11 +9,11 @@
  * For further information, please contact Curity AB.
  */
 
-import {jsonToGraphQLQuery} from 'json-to-graphql-query';
-import {CreateDatabaseClientInput} from './data/databaseClient.js';
+import {Client, ClientOptions, fetchExchange, gql} from '@urql/core';
+import {CreateDatabaseClientInput, CreateDatabaseClientPayload} from './data/databaseClient.js';
 import {Environment} from './environment.js';
 import {getHttpErrorAsText, getGraphqlErrorAsText} from './utils.js'
-
+        
 /*
  * A class to send database client information to GraphQL APIs
  */
@@ -49,57 +49,44 @@ export class GraphqlClient {
         this.accessToken = tokens.access_token;
     }
 
-    public async saveClient(databaseClient: CreateDatabaseClientInput): Promise<void> {
+    public async saveClient(databaseClient: CreateDatabaseClientInput): Promise<CreateDatabaseClientPayload | null> {
 
-        const command = {
-            mutation: {
-                createDatabaseClient: {
-                    __args: {
-                        input: databaseClient,
-                    },
-                    client: {
-                        client_id: true,
-                    },
+        const options: ClientOptions = {
+            url: this.environment.graphqlClientManagementEndpoint,
+            fetchOptions: {
+                headers: {
+                    'authorization': `bearer ${this.accessToken}`,
+                    'content-type': 'application/graphql',
                 },
-            }
-        };
-
-        try {
-            
-            await this.runGraphqlCommand('saveClient', command);
-
-        } catch(e: any) {
-
-            if (e.message?.indexOf('already registered') === -1) {
-                throw e;
-            }
-        }
-    }
-
-    private async runGraphqlCommand(name: string, command: any): Promise<any> {
-        
-        const commandText = jsonToGraphQLQuery(command, { pretty: true });
-
-        const response = await fetch(this.environment.graphqlClientManagementEndpoint, {
-            method: 'POST',
-            headers: {
-              'authorization': `bearer ${this.accessToken}`,
-              'content-type': 'application/graphql',
             },
-            body: commandText,
-        });
+           exchanges: [fetchExchange],
+        };
+        const client = new Client(options);
 
-        if (response.status !== 200) {
-            const message = await getHttpErrorAsText(response);
-            throw new Error(`GRAPHQL ${name} request failed: ${response.status}: ${message}`);
+        const mutation = gql`
+            mutation createDatabaseClient($input: CreateDatabaseClientInput!) {
+                createDatabaseClient(input: $input ) {
+                    client {
+                        client_id
+                    }
+                }
+            }`;
+        const variables = { input: databaseClient };
+        
+        const result = await client.mutation<CreateDatabaseClientPayload>(mutation, variables);
+        if (result.error?.networkError || result.error?.response?.status != 200) {
+            
+            if (result.error?.response?.status) {
+                throw new Error(`GRAPHQL request failed: status: ${result.error.response.status}`);
+            } else {
+                throw new Error(`GRAPHQL request failed: ${result.error?.networkError}`);
+            }
         }
 
-        const responseData = await response.json();
-        if (responseData.errors) {
-            const message = getGraphqlErrorAsText(responseData);
-            throw new Error(`GRAPHQL ${name} request failed: ${message}`);
+        if (result.error?.graphQLErrors) {
+            throw new Error(getGraphqlErrorAsText(result.error.graphQLErrors));
         }
 
-        return responseData;
+        return result.data || null;
     }
 }

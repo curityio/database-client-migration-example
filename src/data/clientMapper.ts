@@ -9,7 +9,6 @@
  * For further information, please contact Curity AB.
  */
 
-import {EnumType} from 'json-to-graphql-query';
 import {ConfigurationClient, MutualTls as ConfigClientMutualTls} from './configurationClient.js';
 
 import {
@@ -69,8 +68,8 @@ export class ClientMapper {
                 require_secured_authorization_response: Array.isArray(configClient['require-secured-authorization-response']) ? true : false,
                 scopes: configClient['scope'] || [],
                 sector_identifier: configClient['use-pairwise-subject-identifiers'] ? configClient['use-pairwise-subject-identifiers']?.['sector-identifier'] || null : null,
-                status: configClient['enabled'] === false ? new EnumType(DatabaseClientStatus.Inactive) as any : new EnumType(DatabaseClientStatus.Active) as any,
-                subject_type: configClient['use-pairwise-subject-identifiers'] ? new EnumType(SubjectType.Pairwise) as any : new EnumType(SubjectType.Public) as any,
+                status: configClient['enabled'] === false ? DatabaseClientStatus.Inactive : DatabaseClientStatus.Active,
+                subject_type: configClient['use-pairwise-subject-identifiers'] ? SubjectType.Pairwise : SubjectType.Public,
                 tags: [],
                 user_authentication: this.getUserAuthentication(configClient),
                 userinfo_signed_issuer_id: configClient['signed-userinfo']?.['userinfo-token-issuer'] || null,
@@ -87,7 +86,7 @@ export class ClientMapper {
         if (configClient.capabilities.assertion) {
 
             capabilities.assertion = {
-                type: new EnumType(Assertion.Assertion) as any,
+                type: Assertion.Assertion,
                 jwt: {
                     allow_reuse: configClient.capabilities.assertion?.jwt['allow-reuse'] || false,
                     issuer: configClient.capabilities.assertion?.jwt?.trust?.issuer || null,
@@ -99,14 +98,14 @@ export class ClientMapper {
         if (configClient.capabilities['assisted-token']) {
 
             capabilities.assisted_token = {
-                type: new EnumType(AssistedToken.AssistedToken) as any,
+                type: AssistedToken.AssistedToken,
             };
         }
 
         if (configClient.capabilities['backchannel-authentication']) {
 
             capabilities.backchannel = {
-                type: new EnumType(BackchannelAuthentication.BackchannelAuthentication) as any,
+                type: BackchannelAuthentication.BackchannelAuthentication,
                 allowed_backchannel_authenticators: configClient.capabilities['backchannel-authentication']?.['allowed-authenticators'] || [],
             };
         }
@@ -121,7 +120,7 @@ export class ClientMapper {
         if (configClient.capabilities.code) {
 
             capabilities.code = {
-                type: new EnumType(Code.Code) as any, 
+                type: Code.Code, 
                 require_pushed_authorization_request: null,
                 proof_key: null,
                 
@@ -148,7 +147,7 @@ export class ClientMapper {
         if (configClient.capabilities.haapi) {
 
             capabilities.haapi = {
-                type: new EnumType(Haapi.Haapi) as any,
+                type: Haapi.Haapi,
                 client_attestation: {} as any,
                 use_legacy_dpop: configClient.capabilities.haapi['use-legacy-dpop'] || false,
             };
@@ -159,7 +158,7 @@ export class ClientMapper {
                 if (configClient.attestation.android) {
 
                     capabilities.haapi.client_attestation.android = {
-                        type: new EnumType(Android.Android) as any,
+                        type: Android.Android,
                         policy_id: configClient.attestation?.android?.['android-policy'] || null,
                         package_names: configClient.attestation?.android?.['package-name'] || [],
                         signature_fingerprints: configClient.attestation?.android?.['signature-digest'] || [],
@@ -168,7 +167,7 @@ export class ClientMapper {
                 } else if (configClient.attestation.ios) {
 
                     capabilities.haapi.client_attestation.ios = {
-                        type: new EnumType(Ios.Ios) as any,
+                        type: Ios.Ios,
                         app_id: configClient.attestation.ios['app-id'],
                         policy_id: configClient.attestation.ios?.['ios-policy'] || null,
                     };
@@ -176,14 +175,14 @@ export class ClientMapper {
                 } else if (configClient.attestation.web) {
                     
                     capabilities.haapi.client_attestation.web = {
-                        type: new EnumType(Web.Web) as any,
+                        type: Web.Web,
                         policy_id: configClient.attestation.web?.['web-policy'] || null,
                     };
 
                 } else {
 
                     capabilities.haapi.client_attestation.no_attestation = {
-                        type: new EnumType(Disable.Disable) as any,
+                        type: Disable.Disable,
                     };
                 }
             }
@@ -192,20 +191,20 @@ export class ClientMapper {
         if (configClient.capabilities.implicit) {
 
             capabilities.implicit = {
-                type: new EnumType(Implicit.Implicit) as any,
+                type: Implicit.Implicit,
             }
         }
 
         if (configClient.capabilities.introspection) {
             capabilities.introspection = {
-                type: new EnumType(Introspection.Introspection) as any,
+                type: Introspection.Introspection,
             }
         }
 
         if (configClient.capabilities['resource-owner-password-credentials']) {
 
             capabilities.resource_owner_password = {
-                type:  new EnumType(ResourceOwnerPasswordCredentials.Ropc) as any,
+                type:  ResourceOwnerPasswordCredentials.Ropc,
                 credential_manager_id: configClient.capabilities['resource-owner-password-credentials']?.['credential-manager'] || null,
             };
         }
@@ -213,7 +212,7 @@ export class ClientMapper {
         if (configClient.capabilities['token-exchange']) {
 
             capabilities.token_exchange = {
-                type: new EnumType(TokenExchange.TokenExchange) as any,
+                type: TokenExchange.TokenExchange,
             };
         }
 
@@ -280,7 +279,7 @@ export class ClientMapper {
 
             // JWKS URI is unsupported for database clients, and is migrated with a type of no-authentication
             return {
-                no_authentication: new EnumType(NoAuth.NoAuth) as any,
+                no_authentication: NoAuth.NoAuth,
             };
         }
     }

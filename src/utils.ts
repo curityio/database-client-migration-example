@@ -9,6 +9,8 @@
  * For further information, please contact Curity AB.
  */
 
+import {GraphQLError} from "@urql/core/dist/urql-core-chunk";
+
 export async function getHttpErrorAsText(response: any): Promise<string> {
 
     if (response.headers['content-type']?.toLowerCase() !== 'application/json') {
@@ -22,11 +24,6 @@ export async function getHttpErrorAsText(response: any): Promise<string> {
         if (payload.error_description) {
             text += `, ${payload.error_description}`;
         }
-        if (payload.errors) {
-            for (const error of payload.errors) {
-                text += `, ${error}`;
-            }
-        }
 
         return text;
     }
@@ -34,10 +31,10 @@ export async function getHttpErrorAsText(response: any): Promise<string> {
     return '';
 }
 
-export function getGraphqlErrorAsText(responseData: any): string {
+export function getGraphqlErrorAsText(errors: GraphQLError[]): string {
 
     let text = '';
-    for (const error of responseData.errors) {
+    for (const error of errors) {
         text += `, ${error.message}`;
     }
 

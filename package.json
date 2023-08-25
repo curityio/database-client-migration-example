@@ -12,8 +12,8 @@
         "start": "node --loader ts-node/esm --no-warnings src/index.ts"
     },
     "dependencies": {
-        "dotenv": "^16.3.1",
-        "json-to-graphql-query": "^2.2.5"
+        "@urql/core": "^4.1.1",
+        "dotenv": "^16.3.1"
     },
     "devDependencies": {
         "@types/node": "^18.15.11",
