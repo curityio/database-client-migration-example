@@ -128,7 +128,7 @@ export class ClientMapper {
 
             const usePAR = configClient.capabilities.code['require-pushed-authorization-requests']
             if (usePAR) {
-                capabilities.code.require_pushed_authorization_request = usePAR ? true : false;
+                capabilities.code.require_pushed_authorization_request = true;
             }
 
             const proofKey = configClient['proof-key'];
