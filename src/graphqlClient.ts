@@ -27,6 +27,9 @@ export class GraphqlClient {
         this.accessToken = '';
     }
 
+    /*
+     * Run a client credentials flow to get an access token with GraphQL permissions
+     */
     public async authenticate(): Promise<void> {
 
         const credential = `${this.environment.migrationClientId}:${this.environment.migrationClientSecret}`;
@@ -47,16 +50,21 @@ export class GraphqlClient {
 
         const tokens = await response.json();
         this.accessToken = tokens.access_token;
+        console.log(this.accessToken);
     }
 
-    public async saveClient(databaseClient: CreateDatabaseClientInput): Promise<CreateDatabaseClientPayload | null> {
+    /*
+     * Send a mutation with the input object as a variable
+     * This type of request sends a JSON request body with 'operationName', 'query' and 'variables' fields
+     */
+    public async saveClient(databaseClient: CreateDatabaseClientInput): Promise<CreateDatabaseClientPayload> {
 
         const options: ClientOptions = {
             url: this.environment.graphqlClientManagementEndpoint,
             fetchOptions: {
                 headers: {
                     'authorization': `bearer ${this.accessToken}`,
-                    'content-type': 'application/graphql',
+                    'content-type': 'application/json',
                 },
             },
            exchanges: [fetchExchange],
@@ -72,21 +80,29 @@ export class GraphqlClient {
                 }
             }`;
         const variables = { input: databaseClient };
-        
         const result = await client.mutation<CreateDatabaseClientPayload>(mutation, variables);
-        if (result.error?.networkError || result.error?.response?.status != 200) {
-            
-            if (result.error?.response?.status) {
+        
+        if (result.error?.response?.status) {
+            if (result.error.response.status != 200) {
                 throw new Error(`GRAPHQL request failed: status: ${result.error.response.status}`);
-            } else {
-                throw new Error(`GRAPHQL request failed: ${result.error?.networkError}`);
             }
         }
 
-        if (result.error?.graphQLErrors) {
-            throw new Error(getGraphqlErrorAsText(result.error.graphQLErrors));
+        if (result.error?.networkError) {
+            throw new Error(`GRAPHQL request failed: ${result.error?.networkError}`);
         }
 
-        return result.data || null;
+        if (result.error?.graphQLErrors) {
+            const errorText = getGraphqlErrorAsText(result.error.graphQLErrors);
+            if (errorText.indexOf('already registered') === -1) {
+                throw new Error(errorText);
+            }
+        }
+
+        if (!result.data) {
+            throw new Error('GRAPHQL response contained no data');
+        }
+
+        return result.data;
     }
 }
