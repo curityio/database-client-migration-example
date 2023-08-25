@@ -50,7 +50,6 @@ export class GraphqlClient {
 
         const tokens = await response.json();
         this.accessToken = tokens.access_token;
-        console.log(this.accessToken);
     }
 
     /*
