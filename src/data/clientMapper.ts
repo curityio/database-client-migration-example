@@ -17,24 +17,28 @@ import {
     Assertion,
     AssistedToken,
     BackchannelAuthentication,
+    CapabilitiesInput,
     ClientAuthenticationInput,
     ClientAuthenticationVerifierInput,
     ClientCredentials,
     Code,
-    CreateDatabaseClientInput,
-    DatabaseClientCreateFields, 
+    CreateDatabaseClientInput, 
     DatabaseClientStatus,
     Disable,
     Haapi,
+    IdTokenInput,
     Implicit,
     Introspection,
     Ios,
     JwtSigningInput,
     MutualTlsInput,
     NoAuth,
+    RefreshTokenInput,
+    RequestObjectInput,
     ResourceOwnerPasswordCredentials,
     SubjectType,
     TokenExchange,
+    UserAuthenticationInput,
     Web} from './databaseClient.js';
 
 export class ClientMapper {
@@ -48,63 +52,43 @@ export class ClientMapper {
                 allowed_origins: configClient['allowed-origins'] || null,
                 application_url: configClient['application-url'] || null,
                 audiences: configClient['audience'] || [],
-                capabilities: {} as any,
+                capabilities: this.getCapabilities(configClient),
                 claim_mapper_id: configClient['claims-mapper'] || null,
                 client_authentication: this.getClientAuthentication(configClient),
                 client_id: configClient['id'],
                 description: configClient['description'] || null,
-                id_token: null,
+                id_token: this.getIdToken(configClient),
                 logo_uri: configClient['logo'] || null,
                 name: configClient['client-name'] || '',
                 policy_uri: configClient['privacy-policy-url'] || null,
-                properties: {},
+                properties: this.getProperties(configClient),
                 redirect_uri_validation_policy_id: configClient['redirect-uri-validation-policy'] || null,
                 redirect_uris: configClient['redirect-uris'] || null,
-                refresh_token: null,
-                request_object: null,
+                refresh_token: this.getRefreshToken(configClient),
+                request_object: this.getRequestObject(configClient),
                 require_secured_authorization_response: Array.isArray(configClient['require-secured-authorization-response']) ? true : false,
                 scopes: configClient['scope'] || [],
-                sector_identifier: null,
+                sector_identifier: configClient['use-pairwise-subject-identifiers'] ? configClient['use-pairwise-subject-identifiers']?.['sector-identifier'] || null : null,
                 status: configClient['enabled'] === false ? new EnumType(DatabaseClientStatus.Inactive) as any : new EnumType(DatabaseClientStatus.Active) as any,
-                subject_type: new EnumType(SubjectType.Public) as any,
+                subject_type: configClient['use-pairwise-subject-identifiers'] ? new EnumType(SubjectType.Pairwise) as any : new EnumType(SubjectType.Public) as any,
                 tags: [],
-                user_authentication: null,
+                user_authentication: this.getUserAuthentication(configClient),
                 userinfo_signed_issuer_id: configClient['signed-userinfo']?.['userinfo-token-issuer'] || null,
                 tos_uri: configClient['terms-of-service-url'] || null,
                 validate_port_on_loopback_interfaces: configClient['validate-port-on-loopback-interfaces'] || null,
             }
         };
-
-        // Apply any logic to update placeholders, for more complex translations
-        this.setCapabilities(databaseClient.fields, configClient);
-        this.setIdToken(databaseClient.fields, configClient);
-        this.setPPIDs(databaseClient.fields, configClient);
-        this.setProperties(databaseClient.fields, configClient);
-        this.setRefreshToken(databaseClient.fields, configClient);
-        this.setRequestObject(databaseClient.fields, configClient);
-        this.setUserAuthentication(databaseClient.fields, configClient);
         
         return databaseClient;
     }
 
-    private setCapabilities(databaseClient: DatabaseClientCreateFields, configClient: ConfigurationClient): void {
+    private getCapabilities(configClient: ConfigurationClient): CapabilitiesInput {
 
-        databaseClient.capabilities = {
-            assertion: null,
-            assisted_token: null,
-            backchannel: null,
-            client_credentials: null,
-            code: null,
-            haapi: null,
-            implicit: null,
-            introspection: null,
-            resource_owner_password: null,
-            token_exchange: null,
-        };
+        let capabilities: CapabilitiesInput = {};
 
         if (configClient.capabilities.assertion) {
 
-            databaseClient.capabilities.assertion = {
+            capabilities.assertion = {
                 type: new EnumType(Assertion.Assertion) as any,
                 jwt: {
                     allow_reuse: configClient.capabilities.assertion?.jwt['allow-reuse'] || false,
@@ -116,14 +100,14 @@ export class ClientMapper {
 
         if (configClient.capabilities['assisted-token']) {
 
-            databaseClient.capabilities.assisted_token = {
+            capabilities.assisted_token = {
                 type: new EnumType(AssistedToken.AssistedToken) as any,
             };
         }
 
         if (configClient.capabilities['backchannel-authentication']) {
 
-            databaseClient.capabilities.backchannel = {
+            capabilities.backchannel = {
                 type: new EnumType(BackchannelAuthentication.BackchannelAuthentication) as any,
                 allowed_backchannel_authenticators: configClient.capabilities['backchannel-authentication']?.['allowed-authenticators'] || [],
             };
@@ -131,14 +115,14 @@ export class ClientMapper {
 
         if (configClient.capabilities['client-credentials']) {
 
-            databaseClient.capabilities.client_credentials = {
+            capabilities.client_credentials = {
                 type: ClientCredentials.ClientCredentials,
             }
         }
 
         if (configClient.capabilities.code) {
 
-            databaseClient.capabilities.code = {
+            capabilities.code = {
                 type: new EnumType(Code.Code) as any, 
                 require_pushed_authorization_request: null,
                 proof_key: null,
@@ -147,7 +131,7 @@ export class ClientMapper {
 
             const usePAR = configClient.capabilities.code['require-pushed-authorization-requests']
             if (usePAR) {
-                databaseClient.capabilities.code.require_pushed_authorization_request = usePAR ? true : false;
+                capabilities.code.require_pushed_authorization_request = usePAR ? true : false;
             }
 
             const proofKey = configClient['proof-key'];
@@ -155,7 +139,7 @@ export class ClientMapper {
 
                 const disallowPlain = !!proofKey['disallowed-proof-key-challenge-methods']?.find((m) => m === 'plain');
                 const disallowS256 = !!proofKey['disallowed-proof-key-challenge-methods']?.find((m) => m === 'S256');
-                databaseClient.capabilities.code.proof_key = {
+                capabilities.code.proof_key = {
                     disallow_challenge_method_plain: disallowPlain,
                     disallow_challenge_method_s256: disallowS256,                
                     require_proof_key: proofKey['require-proof-key'],
@@ -165,7 +149,7 @@ export class ClientMapper {
 
         if (configClient.capabilities.haapi) {
 
-            databaseClient.capabilities.haapi = {
+            capabilities.haapi = {
                 type: new EnumType(Haapi.Haapi) as any,
                 client_attestation: {} as any,
                 use_legacy_dpop: configClient.capabilities.haapi['use-legacy-dpop'] || false,
@@ -173,10 +157,10 @@ export class ClientMapper {
 
             if (configClient.attestation) {
 
-                databaseClient.capabilities.haapi.client_attestation = {};
+                capabilities.haapi.client_attestation = {};
                 if (configClient.attestation.android) {
 
-                    databaseClient.capabilities.haapi.client_attestation.android = {
+                    capabilities.haapi.client_attestation.android = {
                         type: new EnumType(Android.Android) as any,
                         policy_id: configClient.attestation?.android?.['android-policy'] || null,
                         package_names: configClient.attestation?.android?.['package-name'] || [],
@@ -185,7 +169,7 @@ export class ClientMapper {
 
                 } else if (configClient.attestation.ios) {
 
-                    databaseClient.capabilities.haapi.client_attestation.ios = {
+                    capabilities.haapi.client_attestation.ios = {
                         type: new EnumType(Ios.Ios) as any,
                         app_id: configClient.attestation.ios['app-id'],
                         policy_id: configClient.attestation.ios?.['ios-policy'] || null,
@@ -193,14 +177,14 @@ export class ClientMapper {
 
                 } else if (configClient.attestation.web) {
                     
-                    databaseClient.capabilities.haapi.client_attestation.web = {
+                    capabilities.haapi.client_attestation.web = {
                         type: new EnumType(Web.Web) as any,
                         policy_id: configClient.attestation.web?.['web-policy'] || null,
                     };
 
                 } else {
 
-                    databaseClient.capabilities.haapi.client_attestation.no_attestation = {
+                    capabilities.haapi.client_attestation.no_attestation = {
                         type: new EnumType(Disable.Disable) as any,
                     };
                 }
@@ -209,20 +193,20 @@ export class ClientMapper {
 
         if (configClient.capabilities.implicit) {
 
-            databaseClient.capabilities.implicit = {
+            capabilities.implicit = {
                 type: new EnumType(Implicit.Implicit) as any,
             }
         }
 
         if (configClient.capabilities.introspection) {
-            databaseClient.capabilities.introspection = {
+            capabilities.introspection = {
                 type: new EnumType(Introspection.Introspection) as any,
             }
         }
 
         if (configClient.capabilities['resource-owner-password-credentials']) {
 
-            databaseClient.capabilities.resource_owner_password = {
+            capabilities.resource_owner_password = {
                 type:  new EnumType(ResourceOwnerPasswordCredentials.Ropc) as any,
                 credential_manager_id: configClient.capabilities['resource-owner-password-credentials']?.['credential-manager'] || null,
             };
@@ -230,10 +214,12 @@ export class ClientMapper {
 
         if (configClient.capabilities['token-exchange']) {
 
-            databaseClient.capabilities.token_exchange = {
+            capabilities.token_exchange = {
                 type: new EnumType(TokenExchange.TokenExchange) as any,
             };
         }
+
+        return capabilities;
     }
 
     private getClientAuthentication(configClient: ConfigurationClient): ClientAuthenticationInput {
@@ -451,132 +437,135 @@ export class ClientMapper {
         }
     }
 
-    private setIdToken(databaseClient: DatabaseClientCreateFields, configClient: ConfigurationClient): void {
+    private getIdToken(configClient: ConfigurationClient): IdTokenInput | null {
 
         const idTokenTtl = configClient['id-token-ttl'];
         const idTokenEncryption = configClient['id-token-encryption'];
-        if (idTokenTtl || idTokenEncryption) {
+        if (!idTokenTtl && !idTokenEncryption) {
+            return null;
+        }
 
-            databaseClient.id_token = {
-                id_token_ttl: null,
-                id_token_encryption: null,
+        let idToken: IdTokenInput = {};
+        if (idTokenTtl) {
+            idToken.id_token_ttl = idTokenTtl;
+        }
+        if (idTokenEncryption?.['content-encryption-algorithm'] &&
+            idTokenEncryption?.['key-management-algorithm'] &&
+            idTokenEncryption?.['encryption-key']) {
+
+            idToken.id_token_encryption = {
+                allowed_content_encryption_alg: idTokenEncryption['content-encryption-algorithm'],
+                allowed_key_management_alg: idTokenEncryption['key-management-algorithm'],
+                encryption_key_id: idTokenEncryption['encryption-key'],
             };
-
-            if (idTokenTtl) {
-                databaseClient.id_token.id_token_ttl = idTokenTtl;
-            }
-            if (idTokenEncryption?.['content-encryption-algorithm'] &&
-                idTokenEncryption?.['key-management-algorithm'] &&
-                idTokenEncryption?.['encryption-key']) {
-
-                databaseClient.id_token.id_token_encryption = {
-                    allowed_content_encryption_alg: idTokenEncryption['content-encryption-algorithm'],
-                    allowed_key_management_alg: idTokenEncryption['key-management-algorithm'],
-                    encryption_key_id: idTokenEncryption['encryption-key'],
-                };
-            }
         }
+
+        return idToken;
     }
 
-    private setPPIDs(databaseClient: DatabaseClientCreateFields, configClient: ConfigurationClient): void {
+    private getRefreshToken(configClient: ConfigurationClient): RefreshTokenInput | null {
 
-        const usePPIDs = configClient['use-pairwise-subject-identifiers'];
-        if (usePPIDs) {
-            databaseClient.subject_type = new EnumType(SubjectType.Pairwise) as any;
-            databaseClient.sector_identifier = usePPIDs['sector-identifier'] || null;
-        }
-    }
-
-    private setProperties(databaseClient: DatabaseClientCreateFields, configClient: ConfigurationClient): void {
-
-        configClient['properties']?.property.forEach((p) => {
-            databaseClient.properties[p.key] = p.value;
-        });
-    }
-
-    private setRefreshToken(databaseClient: DatabaseClientCreateFields, configClient: ConfigurationClient): void {
-
-        const refreshTokenTtl = this.getNumberSafe(configClient['refresh-token-ttl']);
-        const refreshTokenMaxRollingLifetime = this.getNumberSafe(configClient['refresh-token-max-rolling-lifetime']);
+        const refreshTokenTtl = this.getNumberAndHandleDisabled(configClient['refresh-token-ttl']);
+        const refreshTokenMaxRollingLifetime = this.getNumberAndHandleDisabled(configClient['refresh-token-max-rolling-lifetime']);
         const reuseRefreshTokens = configClient['reuse-refresh-tokens'];
 
-        if (refreshTokenTtl || refreshTokenMaxRollingLifetime || reuseRefreshTokens)  {
-
-            databaseClient.refresh_token = {
-                refresh_token_max_rolling_lifetime: null,
-                refresh_token_ttl: 0,
-                reuse_refresh_tokens: null,
-            }
-
-            if (refreshTokenTtl) {
-                databaseClient.refresh_token.refresh_token_ttl = refreshTokenTtl;
-            }
-            if (refreshTokenMaxRollingLifetime) {
-                databaseClient.refresh_token.refresh_token_max_rolling_lifetime = refreshTokenMaxRollingLifetime;
-            }
-            if (reuseRefreshTokens) {
-                databaseClient.refresh_token.reuse_refresh_tokens = reuseRefreshTokens;
-            }
+        if (!refreshTokenTtl && !refreshTokenMaxRollingLifetime && !reuseRefreshTokens)  {
+            return null;
         }
+
+        const refreshToken: RefreshTokenInput = {
+            refresh_token_max_rolling_lifetime: null,
+            refresh_token_ttl: 0,
+            reuse_refresh_tokens: null,
+        }
+
+        if (refreshTokenTtl) {
+            refreshToken.refresh_token_ttl = refreshTokenTtl;
+        }
+        if (refreshTokenMaxRollingLifetime) {
+            refreshToken.refresh_token_max_rolling_lifetime = refreshTokenMaxRollingLifetime;
+        }
+        if (reuseRefreshTokens) {
+            refreshToken.reuse_refresh_tokens = reuseRefreshTokens;
+        }
+
+        return refreshToken;
     }
 
-    private setRequestObject(databaseClient: DatabaseClientCreateFields, configClient: ConfigurationClient): void {
+    private getNumberAndHandleDisabled(value: number | 'disabled' | undefined): number | undefined {
+        return value === 'disabled' ? undefined : value;
+    }
+
+    private getProperties(configClient: ConfigurationClient): any {
+
+        const properties: any = {};
+
+        configClient['properties']?.property.forEach((p) => {
+            properties[p.key] = p.value;
+        });
+
+        return properties;
+    }
+
+    private getRequestObject(configClient: ConfigurationClient): RequestObjectInput | null {
 
         const source = configClient['request-object'];
-        if (source) {
-
-            databaseClient.request_object = {
-                allow_unsigned_for_by_value: source['allow-unsigned-for-by-value'],
-                by_reference: null,
-                request_jwt_issuer: source['issuer'] || null,
-                request_jwt_signature_verification_key: source['signature-verification-key'] || null,
-            }
-
-            const sourceByRef = source['by-reference'];
-            if (sourceByRef) {
-                databaseClient.request_object.by_reference = {
-                    allow_unsigned_for: sourceByRef['allow-unsigned'] || null,
-                    allowed_request_urls: sourceByRef['allowed-request-url'] || [],
-                    http_client_id: sourceByRef['http-client'] || null,
-                };
-            }
+        if (!source) {
+            return null;
         }
+
+        let requestObject: RequestObjectInput = {
+            allow_unsigned_for_by_value: source['allow-unsigned-for-by-value'],
+            by_reference: null,
+            request_jwt_issuer: source['issuer'] || null,
+            request_jwt_signature_verification_key: source['signature-verification-key'] || null,
+        }
+
+        const sourceByRef = source['by-reference'];
+        if (sourceByRef) {
+            requestObject.by_reference = {
+                allow_unsigned_for: sourceByRef['allow-unsigned'] || null,
+                allowed_request_urls: sourceByRef['allowed-request-url'] || [],
+                http_client_id: sourceByRef['http-client'] || null,
+            };
+        }
+
+        return requestObject;
     }
 
-    private setUserAuthentication(databaseClient: DatabaseClientCreateFields, configClient: ConfigurationClient): void {
+    private getUserAuthentication(configClient: ConfigurationClient): UserAuthenticationInput | null {
 
         const source = configClient['user-authentication'];
-        if (source) {
+        if (!source) {
+            return null;
+        }
             
-            databaseClient.user_authentication = {
-                allowed_authenticators: source['allowed-authenticators'] || [],
-                allowed_post_logout_redirect_uris: source['allowed-post-logout-redirect-uris'] || [],
-                authenticator_filters: source['authenticator-filters'] || [],
-                backchannel_logout_uri: source['backchannel-logout-uri'] || null,
-                consent: null,
-                context_info: source['context-info'] || '',
-                force_authentication: source['force-authn'] || null,
-                freshness: source.freshness || null,
-                frontchannel_logout_uri: source['frontchannel-logout-uri'] || null,
-                http_client_id: source['http-client'] || null,
-                locale: source.locale || null,
-                required_claims: source['required-claims'] || [],
-                template_area: source['template-area'] || null,
-            };
+        const userAuthentication: UserAuthenticationInput = {
+            allowed_authenticators: source['allowed-authenticators'] || [],
+            allowed_post_logout_redirect_uris: source['allowed-post-logout-redirect-uris'] || [],
+            authenticator_filters: source['authenticator-filters'] || [],
+            backchannel_logout_uri: source['backchannel-logout-uri'] || null,
+            consent: null,
+            context_info: source['context-info'] || '',
+            force_authentication: source['force-authn'] || null,
+            freshness: source.freshness || null,
+            frontchannel_logout_uri: source['frontchannel-logout-uri'] || null,
+            http_client_id: source['http-client'] || null,
+            locale: source.locale || null,
+            required_claims: source['required-claims'] || [],
+            template_area: source['template-area'] || null,
+        };
 
-            const consent = configClient['user-consent'];
-            if (consent) {
+        const consent = configClient['user-consent'];
+        if (consent) {
 
-                databaseClient.user_authentication.consent = {
-                    allow_deselection: consent['allow-deselection'],
-                    only_consentors: consent['only-consentors'],
-                    consentors: consent.consentors?.consentor || [],
-                }
+            userAuthentication.consent = {
+                allow_deselection: consent['allow-deselection'],
+                only_consentors: consent['only-consentors'],
+                consentors: consent.consentors?.consentor || [],
             }
         }
-    }
 
-    private getNumberSafe(value: number | 'disabled' | undefined): number | undefined {
-        return value === 'disabled' ? undefined : value;
+        return userAuthentication;
     }
 }
