@@ -560,8 +560,8 @@ export class ClientMapper {
         if (consent) {
 
             userAuthentication.consent = {
-                allow_deselection: consent['allow-deselection'],
-                only_consentors: consent['only-consentors'],
+                allow_deselection: consent['allow-deselection'] || null,
+                only_consentors: consent['only-consentors'] || null,
                 consentors: consent.consentors?.consentor || [],
             }
         }

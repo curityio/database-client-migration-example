@@ -6,8 +6,63 @@
             <expose-detailed-error-messages/>
             <settings>
                 <authorization-server xmlns="https://curity.se/ns/conf/profile/oauth">
+                    <client-capabilities>
+                    <assertion>
+                        <asymmetrically-signed-jwt>
+                            <signature-algorithm>PS256</signature-algorithm>
+                        </asymmetrically-signed-jwt>
+                    </assertion>
+                    </client-capabilities>
                     <client-store>
                         <config-backed>
+                        <client>
+                            <id>assertion-client</id>
+                            <jwks-uri>
+                                <uri>https://api.example.com/jwks</uri>
+                            </jwks-uri>
+                            <capabilities>
+                            <assertion>
+                                <jwt>
+                                <trust>
+                                    <asymmetric-signing-key>default-signature-verification-key</asymmetric-signing-key>
+                                </trust>
+                                </jwt>
+                            </assertion>
+                            </capabilities>
+                        </client>
+                            <client>
+                                <id>web-pkce-client</id>
+                                <no-authentication>true</no-authentication>
+                                <redirect-uris>https://oauth.tools/callback/code</redirect-uris>
+                                <user-consent>
+                                </user-consent>
+                                <proof-key>
+                                <require-proof-key>true</require-proof-key>
+                                </proof-key>
+                                <access-token-ttl>1800</access-token-ttl>
+                                <refresh-token-ttl>3600</refresh-token-ttl>
+                                <id-token-ttl>3600</id-token-ttl>
+                                <scope>openid</scope>
+                                <scope>profile</scope>
+                                <user-authentication>
+                                <allowed-authenticators>username</allowed-authenticators>
+                                </user-authentication>
+                                <capabilities>
+                                <code>
+                                </code>
+                                </capabilities>
+                                <validate-port-on-loopback-interfaces>true</validate-port-on-loopback-interfaces>
+                                <properties>
+                                <property>
+                                    <key>property1</key>
+                                    <value>value1</value>
+                                </property>
+                                <property>
+                                    <key>property2</key>
+                                    <value>value2</value>
+                                </property>
+                                </properties>
+                            </client>
                             <client>
                                 <id>haapi-ios-client</id>
                                 <client-name>Haapi iOS Client</client-name>
