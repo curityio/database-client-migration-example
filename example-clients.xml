@@ -10,11 +10,6 @@
                         <symmetrically-signed-jwt>
                             <signature-algorithm>HS256</signature-algorithm>
                         </symmetrically-signed-jwt>
-                        <mutual-tls>
-                            <by-proxy>
-                                <client-certificate-http-header>x-client-cert</client-certificate-http-header>
-                            </by-proxy>
-                        </mutual-tls>
                     </client-authentication>
                     <client-capabilities>
                         <assertion>
@@ -26,15 +21,13 @@
                     <client-store>
                         <config-backed>
                             <client>
-                                <id>web-mtls-client</id>
-                                <mutual-tls-by-proxy>
-                                <client-dns-name>test.com</client-dns-name>
-                                <trusted-ca>Curity_Self_Signed_Root_CA_for_Mutual_TLS_Testing</trusted-ca>
-                                </mutual-tls-by-proxy>
-                                <redirect-uris>https://oauth.tools/callback/code</redirect-uris>
+                                <id>web-client</id>
+                                <secret>$5$aRyvWOXJmR77784D$UrcVpbw69xzLVA4/rwj66nkcMT2paCNhXlI3ElLRbTD</secret>
+                                <redirect-uris>oauth.tools://app/callback/code</redirect-uris>
                                 <user-authentication>
                                 </user-authentication>
-                                <allowed-origins>https://oauth.tools</allowed-origins>
+                                <scope>openid</scope>
+                                <scope>profile</scope>
                                 <capabilities>
                                 <code>
                                 </code>
@@ -164,17 +157,5 @@
                 </override-certificate-chain-validation>
             </android-policy>
         </client-attestation>
-            <crypto>
-                <ssl>
-                    <client-truststore>
-                        <client-certificate>
-                            <id>Curity_Self_Signed_Root_CA_for_Mutual_TLS_Testing</id>
-                            <size>2048</size>
-                            <keystore>data:application/pem;aes,v:S.WnFNS0dnQUxlQ0dWTEhlZg==.X_OJCAfVeech-pJ_V2G6UQ==.c-YSPnoWu5ORy9v8_g2upW76iqbGjx3a0n77ADkg84AtZSwLpjKflKZtbgOg4HWHaXGDY4t3VEsy8Axmq-ztpdkqovXH_-TxhdBNMj1fPq8xz06SL7yy_NvpvT6KYxjGpvuvfvea2A4B8tkGAap8nC6nEBTfJMOfkMTRNrLLRvCN1jy0F42nomjAy_co7DWyFm7tXc-ndV-7b-wcwMRO8ZYbATLTSto4AP6MW4ETdF-_VfmzSKyk5pXjOOejK1tSL5txMGl88aT7g4gh0EKhynhH2X2WGYFKwGws6LWmnK3cOQcSfDuuCGS8xWBYv4WVcABLtFLMP5MjA-JXdDVyd_ErOjouhl6OEJPQ9n3PU1VA261UN0PBWeqsV3XPs9euetETHduANqnayPUUYhv_89QXwKoyIsFKAkFh0U5uqW4pPmVi9vN-h5SkX-8lgG9a70IS577QMvgODlt2I7e3iNSJ2xg4PUtq7u_F9ZGLoSUws3DJ3DlTNA7SlrKzwrD66i5UDgrjKZ5gC9fAqm72g8cutJl06IbfzgNsHUj-R_oXXP_20XAyoa53uGV9kXRfjf847ErP8vXju90vhUNIOYHJrUd3sFsH7T6ad67BPjSKQQ8cJR5qiidbXST3Q4qRhzb2WIsStOXu8uuQfcv_MmC2x1KhI5iKR1eajXVFD-uxPEw43tF01YIu1wKVsFy33KdUzvbO27H-gzcTT3qqJi1y_Tn566tfYfKqWYgFIehy9f4LBKXbVRZJUJZaUKmsFxlQG4Ms9wP8Mv6uG8ouwOh_KO-vmEDniutudDOuLV1sTRUV4EFI7_jEd0jPeB2HCQIIUo1fFaBSZ5JoaBG62ATEaP7pmPUwW40If9yDuR6vp6h-gMhfmTFevmF-sx4P9H1u6uY0cgn8OUOSzhemnDF1fsg61F4K1RJQE545dAdjRcTUvWURyToKj2XAsZjtSbvu11RH7O_e4MrDPV9y0l187N5Mr_CVTUN5Irk9XDtBj8uCG9trE-lnal3zlVlmegdtYHe1asMYFV8SbKv8vbaBulPFa0PBiY_ZcsuKwDwIeOTJTxP7ffoDRXmrST2I3Ktsvhdiru5A3e1pv_kcYZvYkrSzvpOHmBjT9Dubdgp_FL4d9ZdPpESywbgO42VLZKYfS8Xchyg90LWMq5huR98i5sEu7O9EXySiE067risd27thy2rLoM3TJdyfYR23Rz1mZ1V0t5OG-wSGAzzMAwmavI78J1ceQ-yNmRcSIEOkLM15X9iadqKvwQ0p3kCjaxLfD2lRmSwPSFQwet3tlC3Yd_P4dM7aoBESGlwCTJ5ewM0Rj_yUrL8buKmV2UlKKDKKu5QTChMtItZJMramDOyg9G7J0BBWqjxNWF0-qO96GZj9488GYzUjb6cPYLdK--9KLTfULxgx_FFVhUlNzJ4jr78CEtjlk_5bLznjiJj5hShYEudlFMRSnEgfqL6bH5SgHbWEsVnHsCn49UXxZT6F5kY6fSDOY0ZbRczwDAv9xCk9mM7Mw7yqqjOLGjuxmkyB-tXbsyXlOjBDSZFP6NCaVIFVr7GLFB7qcKIKHfbKnAI_AFwpUI_zOTHmfLF2E84bFxkkwFU9mb0mT3uDkpHgA2r9wRIyZptClzSI37NQ6dmUMv5CS1u7obL_8ELf8h52KEtQpEeo9_npGQlfURDEMmIkR8PWGPtWpujnM-sI2IWB7te7wWfihJgONCpJKeHT2BIf-3LLF9XsQ7Flq-vxkxe1XTPLIyMGrxIYtbiO4DiOhW2zk-VLHPVIx55g.v3PC-ixzziRc2hjbTqhzfqZSYiqO-TcQwQow4JA6Wz4=</keystore>
-                            <type>rsa</type>
-                        </client-certificate>
-                    </client-truststore>
-                </ssl>
-            </crypto>
     </facilities>
 </config>
