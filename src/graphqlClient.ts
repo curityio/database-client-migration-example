@@ -63,7 +63,6 @@ export class GraphqlClient {
             fetchOptions: {
                 headers: {
                     'authorization': `bearer ${this.accessToken}`,
-                    'content-type': 'application/json',
                 },
             },
            exchanges: [fetchExchange],
