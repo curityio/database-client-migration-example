@@ -38,8 +38,15 @@ try {
 
                 console.log(`Migrating OAuth client '${configClient.id}' ...`);
                 const databaseClient = mapper.convertToDatabaseClient(configClient);
-                await graphqlClient.saveClient(databaseClient);
-                console.log(`OAuth client '${configClient.id}' was succesfully migrated to database storage`);
+                if (databaseClient) {
+
+                    await graphqlClient.saveClient(databaseClient);
+                    console.log(`OAuth client '${configClient.id}' was succesfully migrated to database storage`);
+
+                } else {
+
+                    console.log(`OAuth client '${configClient.id}' does not yet support database storage`);
+                }
             }
         }
     }

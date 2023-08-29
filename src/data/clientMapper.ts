@@ -42,7 +42,11 @@ import {
 
 export class ClientMapper {
 
-    public convertToDatabaseClient(configClient: ConfigurationClient): CreateDatabaseClientInput {
+    public convertToDatabaseClient(configClient: ConfigurationClient): CreateDatabaseClientInput | null {
+
+        if (!this.isSupported(configClient)) {
+            return null;
+        }
 
         return {
             fields: {
@@ -77,6 +81,22 @@ export class ClientMapper {
                 validate_port_on_loopback_interfaces: configClient['validate-port-on-loopback-interfaces'] || null,
             }
         };
+    }
+
+    private isSupported(configClient: ConfigurationClient): boolean {
+
+        if (configClient['jwks-uri'] || configClient['mutual-tls'] || configClient['mutual-tls-by-proxy']) {
+            return false;
+        }
+
+        const secondary = configClient['secondary-authentication-method'];
+        if (secondary) {
+            if (secondary['jwks-uri'] || secondary['mutual-tls'] || secondary['mutual-tls-by-proxy']) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private getCapabilities(configClient: ConfigurationClient): CapabilitiesInput {
@@ -275,9 +295,12 @@ export class ClientMapper {
                 },
             };
 
+        } else if (configClient['jwks-uri']) {
+
+            throw new Error('JWKS URI is not currently supported for database clients');
+
         } else {
 
-            // JWKS URI is unsupported for database clients, and is migrated with a type of no-authentication
             return {
                 no_authentication: NoAuth.NoAuth,
             };
@@ -286,9 +309,8 @@ export class ClientMapper {
 
     private getSecondaryClientAuthentication(configClient: ConfigurationClient): ClientAuthenticationVerifierInput | null {
 
-        // No authentication cannot be used for the secondary method, so do not set secondary details if JWKS URI is configured
         const secondary = configClient['secondary-authentication-method']
-        if (secondary && !secondary['jwks-uri'] && !secondary['no-authentication']) {
+        if (secondary) {
 
             if (secondary['asymmetric-key']) {
 
@@ -333,11 +355,15 @@ export class ClientMapper {
                         symmetric_key: secondary['symmetric-key'],
                     },
                 };
+
+            } else if (secondary['jwks-uri']) {
+
+                throw new Error('JWKS URI is not currently supported for database clients');
             }
         }
+
         return null;
     }
-
 
     private getMutualTls(configClient: ConfigClientMutualTls): MutualTlsInput {
 
@@ -348,7 +374,7 @@ export class ClientMapper {
             return {
                 dn: {
                     client_dn: configClient['client-dn'],
-                    rdns_to_match: [], // TOFIX
+                    rdns_to_match: [],
                     trusted_cas: trustedCas,
                 },
             };
