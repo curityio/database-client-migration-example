@@ -15,7 +15,7 @@
  */
 
 import {ClientMapper} from './data/clientMapper.js'
-import {getEnvironment, isClientToIgnore} from './environment.js'
+import {getEnvironment, isClientToMigrate} from './environment.js'
 import {RestconfClient} from './restconfClient.js'
 import {GraphqlClient} from './graphqlClient.js'
 
@@ -24,7 +24,7 @@ try {
     console.log('Preparing environment ...');
     const environment = getEnvironment();
     const restconfClient = new RestconfClient(environment);
-    const mapper = new ClientMapper();
+    const mapper = new ClientMapper(environment.migrationTag);
     const graphqlClient = new GraphqlClient(environment);
 
     console.log('Reading all profiles from configuration ...');
@@ -39,7 +39,7 @@ try {
         const configClients = await restconfClient.getClientsForProfile(profileId);
         for (const configClient of configClients) {
 
-            if (!isClientToIgnore(configClient.id)) {
+            if (isClientToMigrate(configClient.id)) {
 
                 console.log(`Migrating OAuth client '${configClient.id}' ...`);
                 const databaseClient = mapper.convertToDatabaseClient(configClient);

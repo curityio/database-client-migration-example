@@ -14,18 +14,23 @@
  *  limitations under the License.
  */
 
-import {ConfigurationClient, MutualTls as ConfigClientMutualTls} from './configurationClient.js';
+import {
+    AsymmetricKeyManagementAlgorithm as ConfigClientAsymmetricKeyManagementAlgorithm,
+    ConfigurationClient,
+    ContentEncryptionAlgorithm as ConfigClientContentEncryptionAlgorithm} from './configurationClient.js';
 
 import {
     Android,
     Assertion,
     AssistedToken,
+    AsymmetricKeyManagementAlgorithm,
     BackchannelAuthentication,
     CapabilitiesInput,
     ClientAuthenticationInput,
     ClientAuthenticationVerifierInput,
     ClientCredentials,
     Code,
+    ContentEncryptionAlgorithm,
     CreateDatabaseClientInput, 
     DatabaseClientStatus,
     Disable,
@@ -35,7 +40,6 @@ import {
     Introspection,
     Ios,
     JwtSigningInput,
-    MutualTlsInput,
     NoAuth,
     RefreshTokenInput,
     RequestObjectInput,
@@ -47,6 +51,18 @@ import {
 
 export class ClientMapper {
 
+    private migrationTag: string; 
+
+    /*
+     * A tag can be written against clients
+     */
+    public constructor(migrationTag: string) {
+        this.migrationTag = migrationTag;
+    }
+
+    /*
+     * The main mapping algorithm for each client
+     */
     public convertToDatabaseClient(configClient: ConfigurationClient): CreateDatabaseClientInput | null {
 
         if (!this.isSupported(configClient)) {
@@ -79,7 +95,7 @@ export class ClientMapper {
                 sector_identifier: configClient['use-pairwise-subject-identifiers'] ? configClient['use-pairwise-subject-identifiers']?.['sector-identifier'] || null : null,
                 status: configClient['enabled'] === false ? DatabaseClientStatus.Inactive : DatabaseClientStatus.Active,
                 subject_type: configClient['use-pairwise-subject-identifiers'] ? SubjectType.Pairwise : SubjectType.Public,
-                tags: [],
+                tags: [this.migrationTag],
                 user_authentication: this.getUserAuthentication(configClient),
                 userinfo_signed_issuer_id: configClient['signed-userinfo']?.['userinfo-token-issuer'] || null,
                 tos_uri: configClient['terms-of-service-url'] || null,
@@ -90,15 +106,30 @@ export class ClientMapper {
 
     private isSupported(configClient: ConfigurationClient): boolean {
 
-        if (configClient['jwks-uri'] || configClient['mutual-tls'] || configClient['mutual-tls-by-proxy']) {
+        // Clients with these key based authentication methods are not supported as database clients yet
+        if (configClient['mutual-tls']          ||
+            configClient['mutual-tls-by-proxy'] ||
+            configClient['jwks-uri']            || 
+            configClient['symmetric-key']) {
+            
             return false;
         }
 
+        // They are not supported for secondary authentication either
         const secondary = configClient['secondary-authentication-method'];
         if (secondary) {
-            if (secondary['jwks-uri'] || secondary['mutual-tls'] || secondary['mutual-tls-by-proxy']) {
+            if (secondary['mutual-tls']          ||
+                secondary['mutual-tls-by-proxy'] || 
+                secondary['jwks-uri']            ||
+                secondary['symmetric-key']) {
+                
                 return false;
             }
+        }
+
+        // DCR template clients are not supported as database clients
+        if (configClient['dynamic-client-registration-template']) {
+            return false;
         }
 
         return true;
@@ -139,7 +170,7 @@ export class ClientMapper {
 
             capabilities.client_credentials = {
                 type: ClientCredentials.ClientCredentials,
-            }
+            };
         }
 
         if (configClient.capabilities.code) {
@@ -217,13 +248,14 @@ export class ClientMapper {
 
             capabilities.implicit = {
                 type: Implicit.Implicit,
-            }
+            };
         }
 
         if (configClient.capabilities.introspection) {
+
             capabilities.introspection = {
                 type: Introspection.Introspection,
-            }
+            };
         }
 
         if (configClient.capabilities['resource-owner-password-credentials']) {
@@ -264,24 +296,12 @@ export class ClientMapper {
                 },
             };
 
-        } else if (configClient['credential-manager']) {
+        }  else if (configClient['credential-manager']) {
 
             return {
                 credential_manager: {
                     credential_manager_id: configClient['credential-manager'],
                 },
-            };
-
-        } else if (configClient['mutual-tls']) {
-
-            return {
-                mutual_tls: this.getMutualTls(configClient['mutual-tls']),
-            };
-
-        } else if (configClient['mutual-tls-by-proxy']) {
-
-            return {
-                mutual_tls_by_proxy: this.getMutualTls(configClient['mutual-tls-by-proxy']),
             };
 
         } else if (configClient['secret']) {
@@ -292,23 +312,15 @@ export class ClientMapper {
                 },
             };
 
-        } else if (configClient['symmetric-key']) {
-
-            return {
-                symmetric: {
-                    symmetric_key: configClient['symmetric-key'],
-                },
-            };
-
-        } else if (configClient['jwks-uri']) {
-
-            throw new Error('JWKS URI is not currently supported for database clients');
-
-        } else {
+        } else if (configClient['no-authentication']) {
 
             return {
                 no_authentication: NoAuth.NoAuth,
             };
+
+        } else {
+
+            throw new Error(`The client authentication method is not currently supported for ${configClient.id}`);
         }
     }
 
@@ -333,18 +345,6 @@ export class ClientMapper {
                     },
                 };
     
-            } else if (secondary['mutual-tls']) {
-    
-                return {
-                    mutual_tls: this.getMutualTls(secondary['mutual-tls']),
-                };
-    
-            } else if (secondary['mutual-tls-by-proxy']) {
-
-                return {
-                    mutual_tls_by_proxy: this.getMutualTls(secondary['mutual-tls-by-proxy']),
-                };
-    
             } else if (secondary['secret']) {
     
                 return {
@@ -353,87 +353,13 @@ export class ClientMapper {
                     },
                 };
     
-            } else if (secondary['symmetric-key']) {
-    
-                return {
-                    symmetric: {
-                        symmetric_key: secondary['symmetric-key'],
-                    },
-                };
+            } else {
 
-            } else if (secondary['jwks-uri']) {
-
-                throw new Error('JWKS URI is not currently supported for database clients');
+                throw new Error(`The secondary client authentication method is not currently supported for ${configClient.id}`);
             }
         }
 
         return null;
-    }
-
-    private getMutualTls(configClient: ConfigClientMutualTls): MutualTlsInput {
-
-        const trustedCas = configClient['trusted-ca'] ? [configClient['trusted-ca']] : [];
-
-        if (configClient['client-dn']) {
-
-            return {
-                dn: {
-                    client_dn: configClient['client-dn'],
-                    rdns_to_match: [],
-                    trusted_cas: trustedCas,
-                },
-            };
-
-        } else if (configClient['client-dns-name']) {
-
-            return {
-                dns: {
-                    client_dns: configClient['client-dns-name'],
-                    trusted_cas: trustedCas,
-                },
-            }
-
-        }  else if (configClient['client-uri']) {
-
-            return {
-                uri: {
-                    client_uri: configClient['client-uri'],
-                    trusted_cas: trustedCas,
-                },
-            }
-
-        } else if (configClient['client-ip']) {
-
-            return {
-                ip: {
-                    client_ip: configClient['client-ip'],
-                    trusted_cas: trustedCas,
-                },
-            }
-
-        } else if (configClient['client-email']) {
-
-            return {
-                email: {
-                    client_email: configClient['client-email'],
-                    trusted_cas: trustedCas,
-                },
-            }
-
-        } else if (configClient['client-certificate']) {
-
-            return {
-                pinned_certificate: {
-                    client_certificate_id: configClient['client-certificate'],
-                },
-            };
-
-        } else {
-
-            return {
-                trusted_cas: trustedCas,
-            }
-        }
     }
 
     private getAssertionSigning(configClient: ConfigurationClient): JwtSigningInput {
@@ -457,11 +383,7 @@ export class ClientMapper {
 
         } else {
 
-            return {
-                symmetric_key: {
-                    symmetric_key: configClient['symmetric-key'] || '',
-                },
-            }
+            throw new Error(`Assertion signing with a symmetric key is not supported for client ${configClient.id}`);
         }
     }
 
@@ -482,8 +404,8 @@ export class ClientMapper {
             idTokenEncryption?.['encryption-key']) {
 
             idToken.id_token_encryption = {
-                allowed_content_encryption_alg: idTokenEncryption['content-encryption-algorithm'],
-                allowed_key_management_alg: idTokenEncryption['key-management-algorithm'],
+                allowed_content_encryption_alg: this.getContentEncryptionAlgorithm(idTokenEncryption['content-encryption-algorithm']),
+                allowed_key_management_alg: this.getAsymmetricKeyManagementAlgorithm(idTokenEncryption['key-management-algorithm']),
                 encryption_key_id: idTokenEncryption['encryption-key'],
             };
         }
@@ -595,5 +517,73 @@ export class ClientMapper {
         }
 
         return userAuthentication;
+    }
+
+    private getContentEncryptionAlgorithm(configValue: ConfigClientContentEncryptionAlgorithm): ContentEncryptionAlgorithm {
+
+        if (configValue === ConfigClientContentEncryptionAlgorithm.A128CBC_HS256) {
+            
+            return ContentEncryptionAlgorithm.A128CbcHs256;
+
+        } else if (configValue === ConfigClientContentEncryptionAlgorithm.A128GCM) {
+
+            return ContentEncryptionAlgorithm.A128Gcm;
+
+        } else if (configValue === ConfigClientContentEncryptionAlgorithm.A192CBC_HS384) {
+
+            return ContentEncryptionAlgorithm.A192CbcHs384;
+
+        } else if (configValue === ConfigClientContentEncryptionAlgorithm.A192GCM) {
+
+            return ContentEncryptionAlgorithm.A192Gcm;
+
+        } else if (configValue === ConfigClientContentEncryptionAlgorithm.A256CBC_HS512) {
+
+            return ContentEncryptionAlgorithm.A256CbcHs512;
+
+        } else if (configValue === ConfigClientContentEncryptionAlgorithm.A256GCM) {
+
+            return ContentEncryptionAlgorithm.A256Gcm;
+
+        } else {
+
+            throw new Error(`Unexpected content encryption algorithm: ${configValue}`);
+        }
+    }
+
+    private getAsymmetricKeyManagementAlgorithm(configValue: ConfigClientAsymmetricKeyManagementAlgorithm): AsymmetricKeyManagementAlgorithm {
+
+        if (configValue == ConfigClientAsymmetricKeyManagementAlgorithm.ECDH_ES) {
+
+            return AsymmetricKeyManagementAlgorithm.EcdhEs;
+
+        } else if (configValue == ConfigClientAsymmetricKeyManagementAlgorithm.ECDH_ES_A128KW) {
+
+            return AsymmetricKeyManagementAlgorithm.EcdhEsA128Kw;
+
+        } else if (configValue == ConfigClientAsymmetricKeyManagementAlgorithm.ECDH_ES_A192KW) {
+
+            return AsymmetricKeyManagementAlgorithm.EcdhEsA192Kw;
+
+        } else if (configValue == ConfigClientAsymmetricKeyManagementAlgorithm.ECDH_ES_A256KW) {
+
+            return AsymmetricKeyManagementAlgorithm.EcdhEsA256Kw;
+
+        } else if (configValue == ConfigClientAsymmetricKeyManagementAlgorithm.RSA1_5) {
+
+            return AsymmetricKeyManagementAlgorithm.Rsa1_5;
+
+        } else if (configValue == ConfigClientAsymmetricKeyManagementAlgorithm.RSA_OAEP) {
+
+            return AsymmetricKeyManagementAlgorithm.RsaOaep;
+
+        }  else if (configValue == ConfigClientAsymmetricKeyManagementAlgorithm.RSA_OAEP_256) {
+
+            return AsymmetricKeyManagementAlgorithm.RsaOaep_256;
+
+        } else {
+
+            throw new Error(`Unexpected assymetric key management algorithm: ${configValue}`);
+        }
     }
 }

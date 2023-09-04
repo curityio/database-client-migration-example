@@ -6,11 +6,6 @@
             <expose-detailed-error-messages/>
             <settings>
                 <authorization-server xmlns="https://curity.se/ns/conf/profile/oauth">
-                    <client-authentication>
-                        <symmetrically-signed-jwt>
-                            <signature-algorithm>HS256</signature-algorithm>
-                        </symmetrically-signed-jwt>
-                    </client-authentication>
                     <client-capabilities>
                         <assertion>
                             <asymmetrically-signed-jwt>
@@ -115,7 +110,14 @@
                                 </attestation>
                             </client>
                             <client>
-                                <id>assertion-client</id>
+                                <id>token-exchange-client</id>
+                                <secret>$5$Mh4wCzhNzpIeAaiC$OGcoepRMuRrpp5CT36W5tUAXTfVUdBVujYkfDBzblJB</secret>
+                                <capabilities>
+                                <token-exchange/>
+                                </capabilities>
+                            </client>
+                            <client>
+                                <id>unsupported-assertion-client</id>
                                 <jwks-uri>
                                     <uri>https://api.example.com/jwks</uri>
                                 </jwks-uri>
@@ -127,13 +129,6 @@
                                     </trust>
                                     </jwt>
                                 </assertion>
-                                </capabilities>
-                            </client>
-                            <client>
-                                <id>token-exchange-client</id>
-                                <symmetric-key>data:text/plain;aes,v:S.YVZ4MUFyam9uZUNqZEc2RQ==.ahPewHM2WXl0QQJdQOtZDg==.c6KdaW3AN795C4x7TI7YGOAEzOu5jwI63e9x9tLEDOSddX_m4aScseO0sCjXUA4ywOYrwEVh7ijsFvxsnbRMT9J-7k6VuBh4CLcZb14CUhY=.J3JpAQ1BDdD5GeLCUKkijzVgSKLcjgkJGVvDzsYH09U=</symmetric-key>
-                                <capabilities>
-                                <token-exchange/>
                                 </capabilities>
                             </client>
                         </config-backed>

@@ -17,6 +17,9 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
+/*
+ * The example migration process uses these parameters
+ */
 export interface Environment {
     adminBaseUrl: string;
     restconfUsername: string;
@@ -26,8 +29,12 @@ export interface Environment {
     migrationClientId: string;
     migrationClientSecret: string;
     migrationClientScope: string;
+    migrationTag: string;
 }
 
+/*
+ * Read the values from the .env file into an object
+ */
 export function getEnvironment(): Environment {
 
     return {
@@ -39,15 +46,27 @@ export function getEnvironment(): Environment {
         migrationClientId: getEnvironmentVariable("MIGRATION_CLIENT_ID"),
         migrationClientSecret: getEnvironmentVariable("MIGRATION_CLIENT_SECRET"),
         migrationClientScope: getEnvironmentVariable("MIGRATION_CLIENT_SCOPE"),
+        migrationTag: getEnvironmentVariable("MIGRATION_TAG"),
     };
 }
 
-export function isClientToIgnore(id: string): boolean {
+/*
+ * Omit some clients from the migration as required
+ */
+export function isClientToMigrate(id: string): boolean {
     
-    return id === getEnvironmentVariable("MIGRATION_CLIENT_ID") ||
-           id == 'devops_dashboard_restconf_client';
+    if (id === getEnvironmentVariable("MIGRATION_CLIENT_ID") ||
+        id == 'devops_dashboard_restconf_client') {
+
+        return false;
+    }
+
+    return true;
 }
 
+/*
+ * Check that the required environment variables have been correctly configured
+ */
 function getEnvironmentVariable(name: string) {
 
     const value = process.env[name];

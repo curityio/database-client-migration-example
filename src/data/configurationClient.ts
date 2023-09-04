@@ -14,10 +14,24 @@
  *  limitations under the License.
  */
 
-import {
-  AsymmetricKeyManagementAlgorithm,
-  ContentEncryptionAlgorithm,
-} from './databaseClient.js';
+export enum ContentEncryptionAlgorithm {
+  A128CBC_HS256 = 'A128CBC-HS256',
+  A128GCM = 'A128GCM',
+  A192CBC_HS384 = 'A192CBC-HS384',
+  A192GCM = 'A192GCM',
+  A256CBC_HS512 = 'A256CBC-HS512',
+  A256GCM = 'A256GCM',
+}
+
+export enum AsymmetricKeyManagementAlgorithm {
+  ECDH_ES = 'ECDH-ES',
+  ECDH_ES_A128KW = 'ECDH-ES+A128KW',
+  ECDH_ES_A192KW = 'ECDH-ES+A192KW',
+  ECDH_ES_A256KW = 'ECDH-ES+A256KW',
+  RSA1_5 = 'RSA1_5',
+  RSA_OAEP = 'RSA-OAEP',
+  RSA_OAEP_256 = 'RSA-OAEP-256',
+}
 
 export interface ConfigurationClient {
   'access-token-ttl': number;
@@ -28,6 +42,7 @@ export interface ConfigurationClient {
   'client-authentication-method'?: string;
   'client-name'?: string;
   'credential-manager'?: string;
+  'dynamic-client-registration-template'?: DynamicClientRegistrationTemplate;
   'id-token-encryption'?: IdTokenEncryption;
   'id-token-ttl'?: number;
   'jwks-uri'?: JwksUri;
@@ -73,6 +88,13 @@ export interface SecondaryAuthenticationMethod {
   'no-authentication'?: boolean;
   'symmetric-key'?: string;
   secret?: string;
+}
+
+export interface DynamicClientRegistrationTemplate {
+  'credential-manager'?: string;
+  'authenticate-user-by'?: string[];
+  secret?: [null];
+  'authenticate-client-by'?: string[];
 }
 
 export interface JwksUri {
