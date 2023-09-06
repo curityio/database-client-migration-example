@@ -91,6 +91,7 @@ GRAPHQL_CLIENT_MANAGEMENT_ENDPOINT='https://login.example-test.com/client-manage
 MIGRATION_CLIENT_ID='migration-client'
 MIGRATION_CLIENT_SECRET='...'
 MIGRATION_CLIENT_SCOPE='database-clients'
+MIGRATION_TAG='migrated-from-config'
 ```
 
 ## More information
