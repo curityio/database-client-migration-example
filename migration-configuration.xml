@@ -1,4 +1,14 @@
 <config xmlns="http://tail-f.com/ns/config/1.0">
+  <environments xmlns="https://curity.se/ns/conf/base">
+    <environment>
+      <services>
+        <service-role>
+          <id>default</id>
+          <endpoints>client-management</endpoints>
+        </service-role>
+      </services>
+    </environment>
+  </environments>
   <profiles xmlns="https://curity.se/ns/conf/base">    
     <profile>
       <id>token-service</id>
@@ -6,6 +16,9 @@
       <settings>
         <authorization-server xmlns="https://curity.se/ns/conf/profile/oauth">
           <authorization-manager>graphql_authorization_manager</authorization-manager>
+          <database-client>
+              <client-data-source>default-datasource</client-data-source>
+          </database-client>
           <scopes>
             <scope>
               <id>database-clients</id>
@@ -25,6 +38,14 @@
           </client-store>
         </authorization-server>
       </settings>
+      <endpoints>
+        <endpoint>
+          <id>client-management</id>
+          <uri>/client-management</uri>
+          <client-authentication>disallow</client-authentication>
+          <endpoint-kind>oauth-client-graphql-api</endpoint-kind>
+        </endpoint>
+      </endpoints>
     </profile>
   </profiles>
   <processing xmlns="https://curity.se/ns/conf/base">
