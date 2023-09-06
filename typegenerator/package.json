@@ -1,0 +1,22 @@
+{
+    "name": "database-client-typegenerator",
+    "version": "1.0.0",
+    "description": "Generates GraphQL database client types from the remote URL",
+    "author": "Curity AB",
+    "license": "Apache-2.0",
+    "type": "module",
+    "engines": {
+        "node": ">=18"
+    },
+    "scripts": {
+        "start": "./generate.sh"
+    },
+    "devDependencies": {
+        "@graphql-codegen/cli": "5.0.0",
+        "@graphql-codegen/client-preset": "^4.1.0",
+        "@graphql-codegen/typescript": "4.0.1",
+        "get-graphql-schema": "^2.1.2",
+        "graphql": "^16.8.0",
+        "typescript": "^5.1.3"
+    }
+}
