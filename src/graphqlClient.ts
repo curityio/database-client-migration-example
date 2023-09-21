@@ -98,6 +98,7 @@ export class GraphqlClient {
         if (result.error?.graphQLErrors) {
             const errorText = getGraphqlErrorAsText(result.error.graphQLErrors);
             if (errorText.indexOf('already registered') === -1) {
+                console.log(JSON.stringify(databaseClient, null, 2));
                 throw new Error(errorText);
             }
         }

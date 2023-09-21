@@ -3,6 +3,7 @@
     <environment>
       <services>
         <service-role>
+          <!-- Change this ID if importing settings into a test system, eg to a value like TestServer1 -->
           <id>default</id>
           <endpoints>client-management</endpoints>
         </service-role>
@@ -11,12 +12,14 @@
   </environments>
   <profiles xmlns="https://curity.se/ns/conf/base">    
     <profile>
+      <!-- Change this ID if importing the migration client into a test system, eg to a value like oauth-dev -->
       <id>token-service</id>
       <type xmlns:as="https://curity.se/ns/conf/profile/oauth">as:oauth-service</type>
       <settings>
         <authorization-server xmlns="https://curity.se/ns/conf/profile/oauth">
           <authorization-manager>graphql_authorization_manager</authorization-manager>
           <database-client>
+              <!-- Change this ID if importing settings into a test system, eg to a value like DefaultHSQLDB -->
               <client-data-source>default-datasource</client-data-source>
           </database-client>
           <scopes>

@@ -204,16 +204,22 @@ export class ClientMapper {
 
             capabilities.haapi = {
                 type: Haapi.Haapi,
-                client_attestation: {} as any,
+                client_attestation: {},
                 use_legacy_dpop: configClient.capabilities.haapi['use-legacy-dpop'] || false,
             };
 
+            if (configClient.capabilities.haapi['allow-without-attestation']) {
+                capabilities.haapi.client_attestation!.no_attestation = {
+                    type: Disable.Disable,
+                }
+            }
+
             if (configClient.attestation) {
 
-                capabilities.haapi.client_attestation = {};
+                
                 if (configClient.attestation.android) {
 
-                    capabilities.haapi.client_attestation.android = {
+                    capabilities.haapi.client_attestation!.android = {
                         type: Android.Android,
                         policy_id: configClient.attestation?.android?.['android-policy'] || null,
                         package_names: configClient.attestation?.android?.['package-name'] || [],
@@ -222,7 +228,7 @@ export class ClientMapper {
 
                 } else if (configClient.attestation.ios) {
 
-                    capabilities.haapi.client_attestation.ios = {
+                    capabilities.haapi.client_attestation!.ios = {
                         type: Ios.Ios,
                         app_id: configClient.attestation.ios['app-id'],
                         policy_id: configClient.attestation.ios?.['ios-policy'] || null,
@@ -230,14 +236,14 @@ export class ClientMapper {
 
                 } else if (configClient.attestation.web) {
                     
-                    capabilities.haapi.client_attestation.web = {
+                    capabilities.haapi.client_attestation!.web = {
                         type: Web.Web,
                         policy_id: configClient.attestation.web?.['web-policy'] || null,
                     };
 
                 } else {
 
-                    capabilities.haapi.client_attestation.no_attestation = {
+                    capabilities.haapi.client_attestation!.no_attestation = {
                         type: Disable.Disable,
                     };
                 }
@@ -312,7 +318,7 @@ export class ClientMapper {
                 },
             };
 
-        } else if (configClient['no-authentication']) {
+        } else if (configClient['no-authentication'] || configClient.capabilities['assisted-token']) {
 
             return {
                 no_authentication: NoAuth.NoAuth,
@@ -320,6 +326,7 @@ export class ClientMapper {
 
         } else {
 
+            console.log(JSON.stringify(configClient, null, 2));
             throw new Error(`The client authentication method is not currently supported for ${configClient.id}`);
         }
     }
