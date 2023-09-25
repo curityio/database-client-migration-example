@@ -63,7 +63,7 @@ for (const profileId of oauthProfileIds) {
 
 if (environment.deleteMigratedClients) {
     for (const migratedClient of migratedClients) {
-        console.log(`Deleting client '${migratedClient.clientId}' fropm profile '${migratedClient.profileId}' ...`);
+        console.log(`Deleting client '${migratedClient.clientId}' from profile '${migratedClient.profileId}' ...`);
         await restconfClient.deleteClient(migratedClient.profileId, migratedClient.clientId);
     }
 }
