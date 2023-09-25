@@ -19,44 +19,37 @@ import {getEnvironment, isClientToMigrate} from './environment.js'
 import {RestconfClient} from './restconfClient.js'
 import {GraphqlClient} from './graphqlClient.js'
 
-try {
+console.log('Preparing environment ...');
+const environment = getEnvironment();
+const restconfClient = new RestconfClient(environment);
+const mapper = new ClientMapper(environment.migrationTag);
+const graphqlClient = new GraphqlClient(environment);
 
-    console.log('Preparing environment ...');
-    const environment = getEnvironment();
-    const restconfClient = new RestconfClient(environment);
-    const mapper = new ClientMapper(environment.migrationTag);
-    const graphqlClient = new GraphqlClient(environment);
+console.log('Reading all profiles from configuration ...');
+const oauthProfileIds = await restconfClient.getProfileIds();
 
-    console.log('Reading all profiles from configuration ...');
-    const oauthProfileIds = await restconfClient.getProfileIds();
+console.log('Initializing GraphQL client ...');
+await graphqlClient.authenticate();
 
-    console.log('Initializing GraphQL client ...');
-    await graphqlClient.authenticate();
+for (const profileId of oauthProfileIds) {
+    
+    console.log(`Reading OAuth clients for profile '${profileId}' ...`);
+    const configClients = await restconfClient.getClientsForProfile(profileId);
+    for (const configClient of configClients) {
 
-    for (const profileId of oauthProfileIds) {
-        
-        console.log(`Reading OAuth clients for profile '${profileId}' ...`);
-        const configClients = await restconfClient.getClientsForProfile(profileId);
-        for (const configClient of configClients) {
+        if (isClientToMigrate(configClient.id)) {
 
-            if (isClientToMigrate(configClient.id)) {
+            console.log(`Migrating OAuth client '${configClient.id}' ...`);
+            const databaseClient = mapper.convertToDatabaseClient(configClient);
+            if (databaseClient) {
 
-                console.log(`Migrating OAuth client '${configClient.id}' ...`);
-                const databaseClient = mapper.convertToDatabaseClient(configClient);
-                if (databaseClient) {
+                await graphqlClient.saveClient(databaseClient);
+                console.log(`OAuth client '${configClient.id}' was succesfully migrated to database storage`);
 
-                    await graphqlClient.saveClient(databaseClient);
-                    console.log(`OAuth client '${configClient.id}' was succesfully migrated to database storage`);
+            } else {
 
-                } else {
-
-                    console.log(`OAuth client '${configClient.id}' does not yet support database storage`);
-                }
+                console.log(`OAuth client '${configClient.id}' does not yet support database storage`);
             }
         }
     }
-
-} catch (e: any) {
-
-    console.log(`Problem encountered: ${e.message}`);
 }
