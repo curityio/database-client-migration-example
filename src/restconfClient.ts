@@ -48,7 +48,6 @@ export class RestconfClient {
 
     public async deleteClient(profileId: string, clientId: string): Promise<void> {
 
-        console.log(clientId);
         const path = `base:profiles/profile=${profileId},oauth-service/settings/profile-oauth:authorization-server/client-store/config-backed/client=${clientId}`;
         await this.deleteData(path);
     }
@@ -74,7 +73,7 @@ export class RestconfClient {
             headers: this.getRequestHeaders(),
         });
 
-        if (response.status !== 204) {
+        if (response.status !== 204 && response.status !== 404) {
             throw new Error(`RESTCONF DELETE request to ${path} failed: ${response.statusText}`);
         }
     }
