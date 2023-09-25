@@ -26,10 +26,12 @@ export class GraphqlClient {
 
     private readonly environment: Environment;
     private accessToken: string;
+    private existingClients: string[];
 
     constructor(environment: Environment) {
         this.environment = environment;
         this.accessToken = '';
+        this.existingClients = [];
     }
 
     /*
@@ -58,10 +60,65 @@ export class GraphqlClient {
     }
 
     /*
-     * Send a mutation with the input object as a variable
+     * At the start of a migration, read any existing client IDs in the database
+     */
+    public async readExistingClients(): Promise<void> {
+
+        const options: ClientOptions = {
+            url: this.environment.graphqlClientManagementEndpoint,
+            fetchOptions: {
+                headers: {
+                    'authorization': `bearer ${this.accessToken}`,
+                },
+            },
+           exchanges: [fetchExchange],
+        };
+        const client = new Client(options);
+
+        const query = gql`
+            query getDatabaseClients {
+                databaseClients {
+                    edges {
+                        node {
+                            client_id
+                        }
+                    }
+                }
+            }`;
+        
+        const variables = {};
+        const result = await client.query(query, variables);
+
+        if (result.error?.response?.status) {
+            if (result.error.response.status != 200) {
+                throw new Error(`GRAPHQL query failed: status: ${result.error.response.status}`);
+            }
+        }
+
+        if (result.error?.networkError) {
+            throw new Error(`GRAPHQL query failed: ${result.error?.networkError}`);
+        }
+
+        const edges = result?.data?.databaseClients?.edges;
+        if (edges && Array.isArray(edges)) {
+            edges.forEach(edge => {
+                const clientId = edge?.node?.client_id;
+                if (clientId) {
+                    this.existingClients.push(clientId);
+                }
+            });
+        }
+    }
+
+    /*
+     * If the client doesn't already exist in the database, send a mutation with the input object as a variable
      * This type of request sends a JSON request body with 'operationName', 'query' and 'variables' fields
      */
-    public async saveClient(databaseClient: CreateDatabaseClientInput): Promise<CreateDatabaseClientPayload> {
+    public async saveClient(databaseClient: CreateDatabaseClientInput): Promise<CreateDatabaseClientPayload | null> {
+
+        if (this.existingClients.indexOf(databaseClient!.fields!.client_id!) !== -1) {
+            return null;
+        }
 
         const options: ClientOptions = {
             url: this.environment.graphqlClientManagementEndpoint,
@@ -87,19 +144,17 @@ export class GraphqlClient {
         
         if (result.error?.response?.status) {
             if (result.error.response.status != 200) {
-                throw new Error(`GRAPHQL request failed: status: ${result.error.response.status}`);
+                throw new Error(`GRAPHQL mutation failed: status: ${result.error.response.status}`);
             }
         }
 
         if (result.error?.networkError) {
-            throw new Error(`GRAPHQL request failed: ${result.error?.networkError}`);
+            throw new Error(`GRAPHQL mutation failed: ${result.error?.networkError}`);
         }
 
         if (result.error?.graphQLErrors) {
             const errorText = getGraphqlErrorAsText(result.error.graphQLErrors);
-            if (errorText.indexOf('already registered') === -1) {
-                throw new Error(errorText);
-            }
+            throw new Error(errorText);
         }
 
         if (!result.data) {

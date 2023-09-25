@@ -31,6 +31,7 @@ const oauthProfileIds = await restconfClient.getProfileIds();
 
 console.log('Initializing GraphQL client ...');
 await graphqlClient.authenticate();
+await graphqlClient.readExistingClients();
 
 const migratedClients: MigratedClient[] = [];
 for (const profileId of oauthProfileIds) {
