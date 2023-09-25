@@ -44,7 +44,11 @@ for (const profileId of oauthProfileIds) {
             if (databaseClient) {
 
                 await graphqlClient.saveClient(databaseClient);
-                console.log(`OAuth client '${configClient.id}' was succesfully migrated to database storage`);
+                console.log(`OAuth client '${configClient.id}' was successfully migrated to database storage`);
+
+                if (environment.deleteMigratedClients) {
+                    await restconfClient.deleteClient(profileId, configClient.id);
+                }
 
             } else {
 

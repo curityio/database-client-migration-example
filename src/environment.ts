@@ -30,6 +30,7 @@ export interface Environment {
     migrationClientSecret: string;
     migrationClientScope: string;
     migrationTag: string;
+    deleteMigratedClients: boolean;
 }
 
 /*
@@ -47,6 +48,7 @@ export function getEnvironment(): Environment {
         migrationClientSecret: getEnvironmentVariable("MIGRATION_CLIENT_SECRET"),
         migrationClientScope: getEnvironmentVariable("MIGRATION_CLIENT_SCOPE"),
         migrationTag: getEnvironmentVariable("MIGRATION_TAG"),
+        deleteMigratedClients: getEnvironmentVariable("DELETE_MIGRATED_CLIENTS") === 'true',
     };
 }
 
