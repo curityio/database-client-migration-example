@@ -74,7 +74,7 @@ export class RestconfClient {
         });
 
         if (response.status !== 204 && response.status !== 404) {
-            throw new Error(`RESTCONF DELETE request to ${path} failed: ${response.statusText}`);
+            console.log(`RESTCONF DELETE request to ${path} failed: ${response.statusText}`);
         }
     }
 
