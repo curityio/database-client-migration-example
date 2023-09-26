@@ -92,6 +92,7 @@ MIGRATION_CLIENT_ID='migration-client'
 MIGRATION_CLIENT_SECRET='...'
 MIGRATION_CLIENT_SCOPE='database-clients'
 MIGRATION_TAG='migrated-from-config'
+DELETE_MIGRATED_CLIENTS='false'
 ```
 
 ## More information

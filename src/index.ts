@@ -18,6 +18,7 @@ import {ClientMapper} from './data/clientMapper.js'
 import {getEnvironment, isClientToMigrate} from './environment.js'
 import {RestconfClient} from './restconfClient.js'
 import {GraphqlClient} from './graphqlClient.js'
+import { MigratedClient } from './migratedClient.js';
 
 console.log('Preparing environment ...');
 const environment = getEnvironment();
@@ -30,7 +31,9 @@ const oauthProfileIds = await restconfClient.getProfileIds();
 
 console.log('Initializing GraphQL client ...');
 await graphqlClient.authenticate();
+await graphqlClient.readExistingClients();
 
+const migratedClients: MigratedClient[] = [];
 for (const profileId of oauthProfileIds) {
     
     console.log(`Reading OAuth clients for profile '${profileId}' ...`);
@@ -44,12 +47,23 @@ for (const profileId of oauthProfileIds) {
             if (databaseClient) {
 
                 await graphqlClient.saveClient(databaseClient);
-                console.log(`OAuth client '${configClient.id}' was succesfully migrated to database storage`);
+                migratedClients.push({
+                    profileId,
+                    clientId: configClient.id,
+                });
+                console.log(`OAuth client '${configClient.id}' was successfully migrated to database storage`);
 
             } else {
 
                 console.log(`OAuth client '${configClient.id}' does not yet support database storage`);
             }
         }
+    }
+}
+
+if (environment.deleteMigratedClients) {
+    for (const migratedClient of migratedClients) {
+        console.log(`Deleting client '${migratedClient.clientId}' from profile '${migratedClient.profileId}' ...`);
+        await restconfClient.deleteClient(migratedClient.profileId, migratedClient.clientId);
     }
 }

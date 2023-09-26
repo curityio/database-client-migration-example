@@ -46,17 +46,36 @@ export class RestconfClient {
         return clients.filter((c: any) => c.id !== this.environment.migrationClientId);
     }
 
+    public async deleteClient(profileId: string, clientId: string): Promise<void> {
+
+        const path = `base:profiles/profile=${profileId},oauth-service/settings/profile-oauth:authorization-server/client-store/config-backed/client=${clientId}`;
+        await this.deleteData(path);
+    }
+
     private async getData(path: string): Promise<any> {
 
         const response = await fetch(`${this.restConfApiBaseUrl}/${path}`, {
+            method: 'GET',
             headers: this.getRequestHeaders(),
         });
 
         if (response.status !== 200) {
-            throw new Error(`RESTCONF request to ${path} failed: ${response.statusText}`);
+            throw new Error(`RESTCONF GET request to ${path} failed: ${response.statusText}`);
         }
 
         return await response.json();
+    }
+
+    private async deleteData(path: string): Promise<any> {
+
+        const response = await fetch(`${this.restConfApiBaseUrl}/${path}`, {
+            method: 'DELETE',
+            headers: this.getRequestHeaders(),
+        });
+
+        if (response.status !== 204 && response.status !== 404) {
+            console.log(`RESTCONF DELETE request to ${path} failed: ${response.statusText}`);
+        }
     }
 
     private getRequestHeaders(): any {
