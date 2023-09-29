@@ -33,7 +33,7 @@ export class RestconfClient {
 
     public async getProfileIds(): Promise<string[]> {
         
-        const profiles = await this.getData('base:profiles/profile/?fields=id;type');
+        const profiles = await this.getData('base:profiles/profile/?depth=2');
         return profiles['base:profile']
             .filter((profile: any) => profile.type === 'profile-oauth:oauth-service')
             .map((profile: any) => profile.id);
