@@ -133,6 +133,22 @@
                                 </assertion>
                                 </capabilities>
                             </client>
+                             <client>
+                                <id>implicit_client</id>
+                                <client-name>implicit_client</client-name>
+                                <redirect-uris>https://oauth.tools/callback/implicit</redirect-uris>
+                                <scope>openid</scope>
+                                <user-authentication>
+                                <allowed-authenticators>username</allowed-authenticators>
+                                </user-authentication>
+                                <capabilities>
+                                <implicit/>
+                                </capabilities>
+                                <use-pairwise-subject-identifiers>
+                                <sector-identifier>implicit_test</sector-identifier>
+                                </use-pairwise-subject-identifiers>
+                                <validate-port-on-loopback-interfaces>true</validate-port-on-loopback-interfaces>
+                            </client>
                         </config-backed>
                     </client-store>
                 </authorization-server>

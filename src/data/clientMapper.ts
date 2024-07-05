@@ -318,7 +318,7 @@ export class ClientMapper {
                 },
             };
 
-        } else if (configClient['no-authentication'] || configClient.capabilities['assisted-token']) {
+        } else if (configClient['no-authentication'] || configClient.capabilities['implicit'] || configClient.capabilities['assisted-token']) {
 
             return {
                 no_authentication: NoAuth.NoAuth,
