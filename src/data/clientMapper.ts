@@ -284,11 +284,11 @@ export class ClientMapper {
 
     private getClientAuthentication(configClient: ConfigurationClient): ClientAuthenticationCreateInput {
 
-        const secondary = configClient['secondary-authentication-method']
+        const secondary = configClient['secondary-authentication-method'];
         return {
             primary: this.getPrimaryClientAuthentication(configClient),
             secondary: this.getSecondaryClientAuthentication(configClient),
-            secondary_verifier_expiration: secondary?.['expires-on'] ? Date.parse(secondary['expires-on']) / 1000.0 : null,
+            secondary_verifier_expiration: secondary?.['expires-on'] ? Math.floor(Date.parse(secondary['expires-on']) / 1000.0) : null,
         };
     }
 
