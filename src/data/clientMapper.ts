@@ -26,8 +26,8 @@ import {
     AsymmetricKeyManagementAlgorithm,
     BackchannelAuthentication,
     CapabilitiesInput,
-    ClientAuthenticationInput,
-    ClientAuthenticationVerifierInput,
+    ClientAuthenticationCreateInput,
+    ClientAuthenticationVerifierCreateInput,
     ClientCredentials,
     Code,
     ContentEncryptionAlgorithm,
@@ -35,7 +35,7 @@ import {
     DatabaseClientStatus,
     Disable,
     Haapi,
-    IdTokenInput,
+    IdTokenCreateInput,
     Implicit,
     Introspection,
     Ios,
@@ -282,7 +282,7 @@ export class ClientMapper {
         return capabilities;
     }
 
-    private getClientAuthentication(configClient: ConfigurationClient): ClientAuthenticationInput {
+    private getClientAuthentication(configClient: ConfigurationClient): ClientAuthenticationCreateInput {
 
         const secondary = configClient['secondary-authentication-method']
         return {
@@ -292,7 +292,7 @@ export class ClientMapper {
         };
     }
 
-    private getPrimaryClientAuthentication(configClient: ConfigurationClient): ClientAuthenticationVerifierInput {
+    private getPrimaryClientAuthentication(configClient: ConfigurationClient): ClientAuthenticationVerifierCreateInput {
 
         if (configClient['asymmetric-key']) {
 
@@ -331,7 +331,7 @@ export class ClientMapper {
         }
     }
 
-    private getSecondaryClientAuthentication(configClient: ConfigurationClient): ClientAuthenticationVerifierInput | null {
+    private getSecondaryClientAuthentication(configClient: ConfigurationClient): ClientAuthenticationVerifierCreateInput | null {
 
         const secondary = configClient['secondary-authentication-method']
         if (secondary) {
@@ -394,7 +394,7 @@ export class ClientMapper {
         }
     }
 
-    private getIdToken(configClient: ConfigurationClient): IdTokenInput | null {
+    private getIdToken(configClient: ConfigurationClient): IdTokenCreateInput | null {
 
         const idTokenTtl = configClient['id-token-ttl'];
         const idTokenEncryption = configClient['id-token-encryption'];
@@ -402,7 +402,7 @@ export class ClientMapper {
             return null;
         }
 
-        let idToken: IdTokenInput = {};
+        let idToken: IdTokenCreateInput = {};
         if (idTokenTtl) {
             idToken.id_token_ttl = idTokenTtl;
         }

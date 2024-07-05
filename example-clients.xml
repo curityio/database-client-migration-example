@@ -67,6 +67,8 @@
                                 <client-name>Haapi Android Client</client-name>
                                 <no-authentication>true</no-authentication>
                                 <redirect-uris>app://haapi</redirect-uris>
+                                <user-authentication>
+                                </user-authentication>
                                 <audience>haapi-client</audience>
                                 <scope>address</scope>
                                 <scope>email</scope>

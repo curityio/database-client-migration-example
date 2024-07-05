@@ -18,8 +18,9 @@ import {Client, ClientOptions, fetchExchange, gql} from '@urql/core';
 import {CreateDatabaseClientInput, CreateDatabaseClientPayload} from './data/databaseClient.js';
 import {Environment} from './environment.js';
 import {getHttpErrorAsText, getGraphqlErrorAsText} from './utils.js'
-        
+
 /*
+
  * A class to send database client information to GraphQL APIs
  */
 export class GraphqlClient {
@@ -130,7 +131,6 @@ export class GraphqlClient {
            exchanges: [fetchExchange],
         };
         const client = new Client(options);
-
         const mutation = gql`
             mutation createDatabaseClient($input: CreateDatabaseClientInput!) {
                 createDatabaseClient(input: $input ) {
