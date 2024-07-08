@@ -78,7 +78,7 @@ export class GraphqlClient {
 
         const query = gql`
             query getDatabaseClients {
-                databaseClients(first: 1000) {
+                databaseClients(first: ${this.environment.numClients}) {
                     edges {
                         node {
                             client_id

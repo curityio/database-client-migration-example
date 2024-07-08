@@ -80,7 +80,8 @@ The migrated clients can now be managed from the DevOps dashboard:
 Once usage is understood, the same approach can be followed for real environments.\
 First ensure that you have a working backup of the configuration clients. \
 Start with test stages of the deployment pipeline, and do basic testing of your clients after the migration.\
-Reconfigure the `.env` file to point the Node.js app to the correct environment before running each migration:
+Reconfigure the `.env` file to point the Node.js app to the correct environment before running each migration.\
+Also ensure that `NUM_CLIENTS` is not lower than the total number of your configuration clients.
 
 ```text
 RESTCONF_USER='admin'
@@ -93,6 +94,7 @@ MIGRATION_CLIENT_SECRET='...'
 MIGRATION_CLIENT_SCOPE='database-clients'
 MIGRATION_TAG='migrated-from-config'
 DELETE_MIGRATED_CLIENTS='false'
+NUM_CLIENTS:1000
 ```
 
 ## More information
