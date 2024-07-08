@@ -67,6 +67,8 @@
                                 <client-name>Haapi Android Client</client-name>
                                 <no-authentication>true</no-authentication>
                                 <redirect-uris>app://haapi</redirect-uris>
+                                <user-authentication>
+                                </user-authentication>
                                 <audience>haapi-client</audience>
                                 <scope>address</scope>
                                 <scope>email</scope>
@@ -130,6 +132,41 @@
                                     </jwt>
                                 </assertion>
                                 </capabilities>
+                            </client>
+                             <client>
+                                <id>implicit_client</id>
+                                <client-name>implicit_client</client-name>
+                                <redirect-uris>https://oauth.tools/callback/implicit</redirect-uris>
+                                <scope>openid</scope>
+                                <user-authentication>
+                                    <allowed-authenticators>username</allowed-authenticators>
+                                </user-authentication>
+                                <capabilities>
+                                    <implicit/>
+                                </capabilities>
+                                <use-pairwise-subject-identifiers>
+                                    <sector-identifier>implicit_test</sector-identifier>
+                                </use-pairwise-subject-identifiers>
+                                <validate-port-on-loopback-interfaces>true</validate-port-on-loopback-interfaces>
+                            </client>
+                            <client>
+                                <id>secondary-secret-expiration-client</id>
+                                <client-name>A client for which an issue was found</client-name>
+                                <secret>$5$Mh4wCzhNzpIeAaiC$OGcoepRMuRrpp5CT36W5tUAXTfVUdBVujYkfDBzblJB</secret>
+                                <secondary-authentication-method>
+                                    <expires-on>2024-02-23T14:22:14.45+00:00</expires-on>
+                                    <secret>$5$Mh4wCzhNzpIeAaiC$OGcoepRMuRrpp5CT36W5tUAXTfVUdBVujYkfDBzblJB</secret>
+                                </secondary-authentication-method>
+                                <scope>profile</scope>
+                                <capabilities>
+                                <client-credentials/>
+                                </capabilities>
+                                <properties>
+                                    <property>
+                                        <key>MyProp1</key>
+                                        <value>Some test property</value>
+                                    </property>
+                                </properties>
                             </client>
                         </config-backed>
                     </client-store>

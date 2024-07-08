@@ -21,7 +21,6 @@ if [ "$HTTP_STATUS" != '200'  ]; then
   exit 1
 fi
 ACCESS_TOKEN=$(cat data.txt | jq -r .access_token)
-echo $ACCESS_TOKEN
 
 #
 # Get the schema

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2023 Curity AB
+ *  Copyright 2024 Curity AB
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -43,6 +43,11 @@ export enum Android {
 /** Android client attestation configuration */
 export type AndroidAttestation = {
   __typename?: 'AndroidAttestation';
+  /**
+   * Whether to disable attestation validation.
+   * This is a debug-only option and must not be used in production environments.
+   */
+  disable_validation: Scalars['Boolean']['output'];
   /** Android package names that should be allowed to perform client attestation */
   package_names: Array<Scalars['String']['output']>;
   /** Attestation policy ID */
@@ -55,14 +60,19 @@ export type AndroidAttestation = {
 
 /** Android client attestation configuration */
 export type AndroidAttestationInput = {
+  /**
+   * Whether to disable attestation validation.
+   * This is a debug-only option and must not be used in production environments.
+   */
+  disable_validation?: InputMaybe<Scalars['Boolean']['input']>;
   /** Android package names that should be allowed to perform client attestation */
-  package_names: Array<Scalars['String']['input']>;
+  package_names?: InputMaybe<Array<Scalars['String']['input']>>;
   /** Attestation policy ID */
   policy_id?: InputMaybe<Scalars['String']['input']>;
   /** Android package signature fingerprints that should be allowed to perform client attestation */
-  signature_fingerprints: Array<Scalars['String']['input']>;
+  signature_fingerprints?: InputMaybe<Array<Scalars['String']['input']>>;
   /** Type of client attestation */
-  type: Android;
+  type?: InputMaybe<Android>;
 };
 
 /** Assertion capability type */
@@ -93,7 +103,7 @@ export type AssertionCapabilityInput = {
   /** Configures the assertion grant for JWT assertions. */
   jwt: JwtAssertionInput;
   /** Type of the assertion capability */
-  type: Assertion;
+  type?: InputMaybe<Assertion>;
 };
 
 /** Assisted token capability type */
@@ -124,7 +134,7 @@ export type AssistedTokenCapability = {
  */
 export type AssistedTokenCapabilityInput = {
   /** Type of the assisted token capability */
-  type: AssistedToken;
+  type?: InputMaybe<AssistedToken>;
 };
 
 /** Asymmetric key configuration */
@@ -212,14 +222,14 @@ export type BackchannelAuthenticationCapabilityInput = {
    */
   allowed_backchannel_authenticators?: InputMaybe<Array<Scalars['String']['input']>>;
   /** Type of the backchannel authentication capability */
-  type: BackchannelAuthentication;
+  type?: InputMaybe<BackchannelAuthentication>;
 };
 
 /** Request Object by-ref configuration */
 export type ByRefRequestObject = {
   __typename?: 'ByRefRequestObject';
   /** If set to true, then unsigned request objects sent by-reference will be accepted. */
-  allow_unsigned_for?: Maybe<Scalars['Boolean']['output']>;
+  allow_unsigned_for: Scalars['Boolean']['output'];
   /**
    * Locations that can be included in a request_uri parameter.
    * The value '*' allows for any.
@@ -239,7 +249,7 @@ export type ByRefRequestObjectInput = {
    * The value '*' allows for any.
    * A wildcard character '*' is also allowed at the end of the uri value.
    */
-  allowed_request_urls: Array<Scalars['String']['input']>;
+  allowed_request_urls?: InputMaybe<Array<Scalars['String']['input']>>;
   /** The HTTP client that will be used when fetching the request object from a provided URI. */
   http_client_id?: InputMaybe<Scalars['String']['input']>;
 };
@@ -267,9 +277,11 @@ export type Capabilities = {
   implicit?: Maybe<ImplicitCapability>;
   /** Introspection capability */
   introspection?: Maybe<IntrospectionCapability>;
+  /** OAuth Token exchange capability */
+  oauth_token_exchange?: Maybe<OAuthTokenExchangeCapability>;
   /** Resource-owner password credentials capability */
   resource_owner_password?: Maybe<ResourceOwnerPasswordCredentialsCapability>;
-  /** Token exchange capability */
+  /** Custom Token exchange capability */
   token_exchange?: Maybe<TokenExchangeCapability>;
 };
 
@@ -295,9 +307,11 @@ export type CapabilitiesInput = {
   implicit?: InputMaybe<ImplicitCapabilityInput>;
   /** Introspection capability */
   introspection?: InputMaybe<IntrospectionCapabilityInput>;
+  /** OAuth Token exchange capability */
+  oauth_token_exchange?: InputMaybe<OAuthTokenExchangeCapabilityInput>;
   /** Resource-owner password credentials capability */
   resource_owner_password?: InputMaybe<ResourceOwnerPasswordCredentialsCapabilityInput>;
-  /** Token exchange capability */
+  /** Custom Token exchange capability */
   token_exchange?: InputMaybe<TokenExchangeCapabilityInput>;
 };
 
@@ -336,15 +350,33 @@ export type ClientAuthentication = {
 };
 
 /** Describes how the client is authenticated */
-export type ClientAuthenticationInput = {
+export type ClientAuthenticationCreateInput = {
   /** The primary way to authenticate this client. */
-  primary: ClientAuthenticationVerifierInput;
+  primary: ClientAuthenticationVerifierCreateInput;
   /**
    * Optional additional client authentication method, used if the primary one was unsuccessful.
    *
    * Allows for high-availability during credential rotation or authentication method upgrades.
    */
-  secondary?: InputMaybe<ClientAuthenticationVerifierInput>;
+  secondary?: InputMaybe<ClientAuthenticationVerifierCreateInput>;
+  /**
+   * The instant after which the secondary verifier should not be used.
+   *
+   * The unit of this value is epoch-seconds.
+   */
+  secondary_verifier_expiration?: InputMaybe<Scalars['Long']['input']>;
+};
+
+/** Describes how the client is authenticated */
+export type ClientAuthenticationUpdateInput = {
+  /** The primary way to authenticate this client. */
+  primary?: InputMaybe<ClientAuthenticationVerifierUpdateInput>;
+  /**
+   * Optional additional client authentication method, used if the primary one was unsuccessful.
+   *
+   * Allows for high-availability during credential rotation or authentication method upgrades.
+   */
+  secondary?: InputMaybe<ClientAuthenticationVerifierUpdateInput>;
   /**
    * The instant after which the secondary verifier should not be used.
    *
@@ -354,18 +386,44 @@ export type ClientAuthenticationInput = {
 };
 
 /** Client authentication verifier */
-export type ClientAuthenticationVerifier = AsymmetricKey | CredentialManager | MutualTlsByProxyVerifier | MutualTlsVerifier | NoAuthentication | Secret | SymmetricKey;
+export type ClientAuthenticationVerifier = AsymmetricKey | CredentialManager | Jwks | JwksUriVerifier | MutualTlsByProxyVerifier | MutualTlsVerifier | NoAuthentication | Secret | SymmetricKey;
 
 /** This is an union type. Only one of the fields must be set. */
-export type ClientAuthenticationVerifierInput = {
+export type ClientAuthenticationVerifierCreateInput = {
   /** Asymmetric key */
   asymmetric?: InputMaybe<AsymmetricKeyInput>;
   /** Credential manager */
   credential_manager?: InputMaybe<CredentialManagerInput>;
+  /** JWKS (asymmetric key authentication). */
+  jwks_object?: InputMaybe<JwksInput>;
+  /** JWKS URI (asymmetric key authentication) */
+  jwks_uri?: InputMaybe<JwksUriCreateInput>;
   /** Mutual TLS authentication */
-  mutual_tls?: InputMaybe<MutualTlsInput>;
+  mutual_tls?: InputMaybe<MutualTlsCreateInput>;
   /** Mutual TLS by proxy authentication */
-  mutual_tls_by_proxy?: InputMaybe<MutualTlsInput>;
+  mutual_tls_by_proxy?: InputMaybe<MutualTlsCreateInput>;
+  /** Disable client authentication */
+  no_authentication?: InputMaybe<NoAuth>;
+  /** Client secret */
+  secret?: InputMaybe<SecretInput>;
+  /** Symmetric key */
+  symmetric?: InputMaybe<SymmetricKeyInput>;
+};
+
+/** This is an union type. Only one of the fields must be set. */
+export type ClientAuthenticationVerifierUpdateInput = {
+  /** Asymmetric key */
+  asymmetric?: InputMaybe<AsymmetricKeyInput>;
+  /** Credential manager */
+  credential_manager?: InputMaybe<CredentialManagerInput>;
+  /** JWKS (asymmetric key authentication) */
+  jwks_object?: InputMaybe<JwksInput>;
+  /** JWKS URI (asymmetric key authentication) */
+  jwks_uri?: InputMaybe<JwksUriInput>;
+  /** Mutual TLS authentication */
+  mutual_tls?: InputMaybe<MutualTlsUpdateInput>;
+  /** Mutual TLS by proxy authentication */
+  mutual_tls_by_proxy?: InputMaybe<MutualTlsUpdateInput>;
   /** Disable client authentication */
   no_authentication?: InputMaybe<NoAuth>;
   /** Client secret */
@@ -398,7 +456,7 @@ export type ClientCredentialsCapability = {
  */
 export type ClientCredentialsCapabilityInput = {
   /** Type of the client-credentials capability */
-  type: ClientCredentials;
+  type?: InputMaybe<ClientCredentials>;
 };
 
 /** Code flow capability type */
@@ -441,7 +499,7 @@ export type CodeCapabilityInput = {
    */
   require_pushed_authorization_request?: InputMaybe<Scalars['Boolean']['input']>;
   /** Type of the code capability */
-  type: Code;
+  type?: InputMaybe<Code>;
 };
 
 /** User consent configuration */
@@ -529,7 +587,7 @@ export type DatabaseClient = {
    * The optional list of URIs or URI-patterns that is allowed to embed the rendered pages inside
    * an iframe, be a trusted source or be used for CORS.
    */
-  allowed_origins?: Maybe<Array<Scalars['String']['output']>>;
+  allowed_origins: Array<Scalars['String']['output']>;
   /**
    * This URL is used if a request is made to the OAuth server without the parameters necessary
    * to initiate authentication.
@@ -571,7 +629,7 @@ export type DatabaseClient = {
    */
   logo_uri?: Maybe<Scalars['String']['output']>;
   /** Metadata related to this client. */
-  meta?: Maybe<Meta>;
+  meta: Meta;
   /** A human readable name of the client. */
   name: Scalars['String']['output'];
   /**
@@ -593,7 +651,7 @@ export type DatabaseClient = {
    * The client redirect URIs.
    * Mandatory if the client has the [CodeCapability].
    */
-  redirect_uris?: Maybe<Array<Scalars['String']['output']>>;
+  redirect_uris: Array<Scalars['String']['output']>;
   /**
    * Configuration for Refresh Tokens.
    * If not set, refresh tokens are automatically issued when the client is configured with one of the following
@@ -636,7 +694,7 @@ export type DatabaseClient = {
    */
   subject_type: SubjectType;
   /** Optional list of tags categorizing this client, thus allowing to easily filter clients in chosen categories. */
-  tags?: Maybe<Array<Scalars['String']['output']>>;
+  tags: Array<Scalars['String']['output']>;
   /** An absolute URL that refers to the terms of service of the client. */
   tos_uri?: Maybe<Scalars['String']['output']>;
   /** Enable client to perform user authentication. */
@@ -711,7 +769,7 @@ export type DatabaseClientCreateFields = {
    * One must be selected. For public clients, select a primary method
    * of `NoAuthentication`.
    */
-  client_authentication?: InputMaybe<ClientAuthenticationInput>;
+  client_authentication?: InputMaybe<ClientAuthenticationCreateInput>;
   /**
    * OAuth client_id, unique only within a single profile.
    *
@@ -721,7 +779,7 @@ export type DatabaseClientCreateFields = {
   /** A human readable description of the client. */
   description?: InputMaybe<Scalars['String']['input']>;
   /** Configuration for ID Tokens. */
-  id_token?: InputMaybe<IdTokenInput>;
+  id_token?: InputMaybe<IdTokenCreateInput>;
   /**
    * A logo of the client, that can shown in user interface templates.
    *
@@ -762,7 +820,7 @@ export type DatabaseClientCreateFields = {
    */
   require_secured_authorization_response?: InputMaybe<Scalars['Boolean']['input']>;
   /** The scopes of this client. */
-  scopes: Array<Scalars['String']['input']>;
+  scopes?: InputMaybe<Array<Scalars['String']['input']>>;
   /**
    * The sector identifier that is used to derive the pairwise pseudonym from,
    * i.e. the pairwise pseudonym is defined for the pair of sector identifier and subject.
@@ -881,11 +939,11 @@ export type DatabaseClientUpdateFields = {
    * One must be selected. For public clients, select a primary method
    * of `NoAuthentication`.
    */
-  client_authentication?: InputMaybe<ClientAuthenticationInput>;
+  client_authentication?: InputMaybe<ClientAuthenticationUpdateInput>;
   /** A human readable description of the client. */
   description?: InputMaybe<Scalars['String']['input']>;
   /** Configuration for ID Tokens. */
-  id_token?: InputMaybe<IdTokenInput>;
+  id_token?: InputMaybe<IdTokenUpdateInput>;
   /**
    * A logo of the client, that can shown in user interface templates.
    *
@@ -1000,13 +1058,23 @@ export type DnMutualTls = NameAndCa & {
 };
 
 /** DN Mutual TLS Authentication */
-export type DnMutualTlsInput = {
+export type DnMutualTlsCreateInput = {
   /** The DN of the client certificate that the client must identify with. */
   client_dn: Scalars['String']['input'];
   /** RDNs to match. */
-  rdns_to_match: Array<Scalars['String']['input']>;
+  rdns_to_match?: InputMaybe<Array<Scalars['String']['input']>>;
   /** The CAs trusted by this client. If empty, all of the CAs configured in the server are used. */
-  trusted_cas: Array<Scalars['String']['input']>;
+  trusted_cas?: InputMaybe<Array<Scalars['String']['input']>>;
+};
+
+/** DN Mutual TLS Authentication */
+export type DnMutualTlsUpdateInput = {
+  /** The DN of the client certificate that the client must identify with. */
+  client_dn?: InputMaybe<Scalars['String']['input']>;
+  /** RDNs to match. */
+  rdns_to_match?: InputMaybe<Array<Scalars['String']['input']>>;
+  /** The CAs trusted by this client. If empty, all of the CAs configured in the server are used. */
+  trusted_cas?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
 /** DNs Mutual TLS Authentication */
@@ -1022,14 +1090,36 @@ export type DnsMutualTls = NameAndCa & {
 };
 
 /** DNs Mutual TLS Authentication */
-export type DnsMutualTlsInput = {
+export type DnsMutualTlsCreateInput = {
   /**
    * The expected dNSName SAN entry in the certificate that the client
    * must identify with.
    */
   client_dns: Scalars['String']['input'];
   /** The CAs trusted by this client. If empty, all of the CAs configured in the server are used. */
-  trusted_cas: Array<Scalars['String']['input']>;
+  trusted_cas?: InputMaybe<Array<Scalars['String']['input']>>;
+};
+
+/** DNs Mutual TLS Authentication */
+export type DnsMutualTlsUpdateInput = {
+  /**
+   * The expected dNSName SAN entry in the certificate that the client
+   * must identify with.
+   */
+  client_dns?: InputMaybe<Scalars['String']['input']>;
+  /** The CAs trusted by this client. If empty, all of the CAs configured in the server are used. */
+  trusted_cas?: InputMaybe<Array<Scalars['String']['input']>>;
+};
+
+/** Input of the duplicate operation. */
+export type DuplicateDatabaseClientByIdInput = {
+  /** The client to duplicate. */
+  client_id: Scalars['ID']['input'];
+  /**
+   * The ID of the new client.
+   * If not provided, an ID is auto-generated.
+   */
+  new_client_id?: InputMaybe<Scalars['ID']['input']>;
 };
 
 /** Email Mutual TLS Authentication */
@@ -1045,14 +1135,25 @@ export type EmailMutualTls = NameAndCa & {
 };
 
 /** Email Mutual TLS Authentication */
-export type EmailMutualTlsInput = {
+export type EmailMutualTlsCreateInput = {
   /**
    * The expected rfc822Name SAN entry in the certificate that the client
    * must identify with.
    */
   client_email: Scalars['String']['input'];
   /** The CAs trusted by this client. If empty, all of the CAs configured in the server are used. */
-  trusted_cas: Array<Scalars['String']['input']>;
+  trusted_cas?: InputMaybe<Array<Scalars['String']['input']>>;
+};
+
+/** Email Mutual TLS Authentication */
+export type EmailMutualTlsUpdateInput = {
+  /**
+   * The expected rfc822Name SAN entry in the certificate that the client
+   * must identify with.
+   */
+  client_email?: InputMaybe<Scalars['String']['input']>;
+  /** The CAs trusted by this client. If empty, all of the CAs configured in the server are used. */
+  trusted_cas?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
 /** HAAPI (Hypermedia authentication API) capability type */
@@ -1077,6 +1178,8 @@ export type HaapiCapability = {
    * It is not allowed to use NoAttestation with a public client.
    */
   client_attestation: ClientAttestation;
+  /** Issue token bound authorization code and refresh token. */
+  issue_token_bound_authorization_code: Scalars['Boolean']['output'];
   /** Type of the HAAPI capability */
   type: Haapi;
   /**
@@ -1102,15 +1205,17 @@ export type HaapiCapabilityInput = {
    * For this reason, if this is not set, the client must NOT set `client_authentication` to `NoAuthentication`.
    */
   client_attestation?: InputMaybe<ClientAttestationInput>;
+  /** Issue token bound authorization code and refresh token. */
+  issue_token_bound_authorization_code?: InputMaybe<Scalars['Boolean']['input']>;
   /** Type of the HAAPI capability */
-  type: Haapi;
+  type?: InputMaybe<Haapi>;
   /**
    * Use an older version of the DPoP processing, which is not nonce-based.
    *
    * This may be required if the client uses an older version of the HAAPI SDK.
    * Refer to the HAAPI SDK documentation for details.
    */
-  use_legacy_dpop: Scalars['Boolean']['input'];
+  use_legacy_dpop?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 /** Configuration of ID tokens. */
@@ -1127,13 +1232,25 @@ export type IdToken = {
 };
 
 /** Configuration of ID tokens. */
-export type IdTokenInput = {
+export type IdTokenCreateInput = {
   /**
    * Enables ID Token Encryption as per JWE specification."
    *
    * The profile must enable id-token encryption before a client can configure it.
    */
-  id_token_encryption?: InputMaybe<JweEncryptionInput>;
+  id_token_encryption?: InputMaybe<JweEncryptionCreateInput>;
+  /** The Time to Live for an id token. If not set, the profile-setting is used. */
+  id_token_ttl?: InputMaybe<Scalars['Long']['input']>;
+};
+
+/** Configuration of ID tokens. */
+export type IdTokenUpdateInput = {
+  /**
+   * Enables ID Token Encryption as per JWE specification."
+   *
+   * The profile must enable id-token encryption before a client can configure it.
+   */
+  id_token_encryption?: InputMaybe<JweEncryptionUpdateInput>;
   /** The Time to Live for an id token. If not set, the profile-setting is used. */
   id_token_ttl?: InputMaybe<Scalars['Long']['input']>;
 };
@@ -1181,7 +1298,7 @@ export type IntrospectionCapability = {
  */
 export type IntrospectionCapabilityInput = {
   /** Type of the token introspection capability */
-  type: Introspection;
+  type?: InputMaybe<Introspection>;
 };
 
 /** IOS client attestation */
@@ -1195,6 +1312,11 @@ export type IosAttestation = {
   __typename?: 'IosAttestation';
   /** IOS App ID that should be allowed to perform client attestation */
   app_id: Scalars['String']['output'];
+  /**
+   * Whether to disable attestation validation.
+   * This is a debug-only option and must not be used in production environments.
+   */
+  disable_validation: Scalars['Boolean']['output'];
   /** Attestation policy ID */
   policy_id?: Maybe<Scalars['String']['output']>;
   /** Type of client attestation */
@@ -1205,10 +1327,15 @@ export type IosAttestation = {
 export type IosAttestationInput = {
   /** IOS App ID that should be allowed to perform client attestation */
   app_id: Scalars['String']['input'];
+  /**
+   * Whether to disable attestation validation.
+   * This is a debug-only option and must not be used in production environments.
+   */
+  disable_validation?: InputMaybe<Scalars['Boolean']['input']>;
   /** Attestation policy ID */
   policy_id?: InputMaybe<Scalars['String']['input']>;
   /** Type of client attestation */
-  type: Ios;
+  type?: InputMaybe<Ios>;
 };
 
 /** IP Mutual TLS Authentication */
@@ -1225,7 +1352,7 @@ export type IpMutualTls = NameAndCa & {
 };
 
 /** IP Mutual TLS Authentication */
-export type IpMutualTlsInput = {
+export type IpMutualTlsCreateInput = {
   /**
    * The expected IP address in either dotted decimal notation (for IPv4)
    * or colon-delimited hexadecimal (for IPv6) that is expected to be present as
@@ -1233,7 +1360,19 @@ export type IpMutualTlsInput = {
    */
   client_ip: Scalars['String']['input'];
   /** The CAs trusted by this client. If empty, all of the CAs configured in the server are used. */
-  trusted_cas: Array<Scalars['String']['input']>;
+  trusted_cas?: InputMaybe<Array<Scalars['String']['input']>>;
+};
+
+/** IP Mutual TLS Authentication */
+export type IpMutualTlsUpdateInput = {
+  /**
+   * The expected IP address in either dotted decimal notation (for IPv4)
+   * or colon-delimited hexadecimal (for IPv6) that is expected to be present as
+   * an iPAddress SAN entry in the certificate that the client must identify with.
+   */
+  client_ip?: InputMaybe<Scalars['String']['input']>;
+  /** The CAs trusted by this client. If empty, all of the CAs configured in the server are used. */
+  trusted_cas?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
 /** JWE encryption configuration */
@@ -1248,13 +1387,36 @@ export type JweEncryption = {
 };
 
 /** JWE encryption configuration */
-export type JweEncryptionInput = {
+export type JweEncryptionCreateInput = {
   /** Supported content encryption algorithms, present as 'enc' in JWE header. */
   allowed_content_encryption_alg: ContentEncryptionAlgorithm;
   /** Algorithms supported to encrypt the content encryption key, present as 'alg' in JWE header. */
   allowed_key_management_alg: AsymmetricKeyManagementAlgorithm;
   /** Encryption key ID */
   encryption_key_id: Scalars['String']['input'];
+};
+
+/** JWE encryption configuration */
+export type JweEncryptionUpdateInput = {
+  /** Supported content encryption algorithms, present as 'enc' in JWE header. */
+  allowed_content_encryption_alg?: InputMaybe<ContentEncryptionAlgorithm>;
+  /** Algorithms supported to encrypt the content encryption key, present as 'alg' in JWE header. */
+  allowed_key_management_alg?: InputMaybe<AsymmetricKeyManagementAlgorithm>;
+  /** Encryption key ID */
+  encryption_key_id?: InputMaybe<Scalars['String']['input']>;
+};
+
+/** JWKS configuration */
+export type Jwks = {
+  __typename?: 'Jwks';
+  /** A JWKS object as a base64-encoded JSON String */
+  jwks: Scalars['String']['output'];
+};
+
+/** JWKS configuration */
+export type JwksInput = {
+  /** A JWKS object as a JSON String. The String should be base64-encoded to prevent encoding issues. */
+  jwks: Scalars['String']['input'];
 };
 
 /** A key present in a JWKS referenced by an URI, accessed via an optional HTTP client ID. */
@@ -1267,11 +1429,26 @@ export type JwksUri = {
 };
 
 /** A key present in a JWKS referenced by an URI, accessed via an optional HTTP client ID. */
-export type JwksUriInput = {
+export type JwksUriCreateInput = {
   /** The optional HTTP client used to retrieve the JWKS. */
   http_client_id?: InputMaybe<Scalars['String']['input']>;
   /** The JWKS URI. */
   uri: Scalars['String']['input'];
+};
+
+/** A key present in a JWKS referenced by an URI, accessed via an optional HTTP client ID. */
+export type JwksUriInput = {
+  /** The optional HTTP client used to retrieve the JWKS. */
+  http_client_id?: InputMaybe<Scalars['String']['input']>;
+  /** The JWKS URI. */
+  uri?: InputMaybe<Scalars['String']['input']>;
+};
+
+/** JWKS URI client authentication verifier */
+export type JwksUriVerifier = {
+  __typename?: 'JwksUriVerifier';
+  /** JWKS URI used to authenticate the client */
+  jwks_uri: JwksUri;
 };
 
 /** JWT assertion configuration */
@@ -1304,11 +1481,11 @@ export type JwtAssertionInput = {
    * The assertion capability must be enabled in the profile with allowed algorithms
    * for the selected signing option.
    */
-  signing: JwtSigningInput;
+  signing?: InputMaybe<JwtSigningInput>;
 };
 
 /** JWT signing configuration */
-export type JwtSigning = AsymmetricKey | JwksUri | SymmetricKey;
+export type JwtSigning = AsymmetricKey | Jwks | JwksUri | SymmetricKey;
 
 /** This is an union type. Only one of the fields must be set. */
 export type JwtSigningInput = {
@@ -1316,6 +1493,8 @@ export type JwtSigningInput = {
   asymmetric_key?: InputMaybe<AsymmetricKeyInput>;
   /** JWKS URI */
   jwks?: InputMaybe<JwksUriInput>;
+  /** JWKS Object */
+  jwks_object?: InputMaybe<JwksInput>;
   /** Symmetric key */
   symmetric_key?: InputMaybe<SymmetricKeyInput>;
 };
@@ -1327,6 +1506,8 @@ export type Meta = {
   created: Scalars['Long']['output'];
   /** Instant the resource was last modified (in epoch-seconds). */
   lastModified: Scalars['Long']['output'];
+  /** Attribute validation warnings. */
+  warnings?: Maybe<Scalars['Object']['output']>;
 };
 
 /** Mutation definitions. */
@@ -1343,6 +1524,12 @@ export type Mutation = {
    * If a client with the given ID does not exist, an error occurs.
    */
   deleteDatabaseClientById?: Maybe<DeleteDatabaseClientPayload>;
+  /**
+   * Duplicates a client.
+   *
+   * If a client with the given ID does not exist, null is returned.
+   */
+  duplicateDatabaseClientById?: Maybe<CreateDatabaseClientPayload>;
   /** Updates the owner of a given database client. */
   setDatabaseClientOwnerById?: Maybe<SetDatabaseClientOwnerPayload>;
   /**
@@ -1357,9 +1544,15 @@ export type Mutation = {
    * Complex fields are NOT merged, i.e. they are replaced completely if provided.
    * For example, for a list field:
    * * If the list field is not provided: the current list value is left untouched
-   * * If the list field is provided with a null or empty value: the current list value is removed
-   * * If a non-empty list field is provided: the current list value is replaced.
-   * If a client with the given ID does not exist, an error occurs.
+   * * If the list field is provided with a `null` or empty list: the current list
+   * value is removed or replaced by its default value if applicable
+   * * If a non-empty list field is provided: the current list value is replaced
+   * If a client with the given ID does not exist, `null` is returned.
+   * Map fields (e.g. `properties`) are handled as follows:
+   * * If the map field is not provided: the current map value is left untouched
+   * * If the map field is provided with a `null` value: the current map value is removed
+   * * If a map field is provided: the provided key/value pairs are merged with the
+   * current map’s value, or removed if their value is `null`.
    */
   updateDatabaseClientById?: Maybe<UpdateDatabaseClientPayload>;
 };
@@ -1374,6 +1567,12 @@ export type MutationCreateDatabaseClientArgs = {
 /** Mutation definitions. */
 export type MutationDeleteDatabaseClientByIdArgs = {
   input: DeleteDatabaseClientByIdInput;
+};
+
+
+/** Mutation definitions. */
+export type MutationDuplicateDatabaseClientByIdArgs = {
+  input: DuplicateDatabaseClientByIdInput;
 };
 
 
@@ -1395,7 +1594,7 @@ export type MutationUpdateDatabaseClientByIdArgs = {
 };
 
 /** Mutual TLS Authentication */
-export type MutualTls = DnMutualTls | DnsMutualTls | EmailMutualTls | IpMutualTls | PinnedCertificate | TrustedCaOnly | UriMutualTls;
+export type MutualTls = DnMutualTls | DnsMutualTls | EmailMutualTls | IpMutualTls | PinnedCertificate | PinnedCertificatePem | TrustedCaOnly | UriMutualTls;
 
 /** Enable client authentication through mutual-tls by-proxy. */
 export type MutualTlsByProxyVerifier = {
@@ -1409,17 +1608,19 @@ export type MutualTlsByProxyVerifier = {
 };
 
 /** This is an union type. Only one of the fields must be set. */
-export type MutualTlsInput = {
+export type MutualTlsCreateInput = {
   /** DN Mutual TLS Authentication */
-  dn?: InputMaybe<DnMutualTlsInput>;
+  dn?: InputMaybe<DnMutualTlsCreateInput>;
   /** DNs Mutual TLS Authentication */
-  dns?: InputMaybe<DnsMutualTlsInput>;
+  dns?: InputMaybe<DnsMutualTlsCreateInput>;
   /** Email Mutual TLS Authentication */
-  email?: InputMaybe<EmailMutualTlsInput>;
+  email?: InputMaybe<EmailMutualTlsCreateInput>;
   /** IP Mutual TLS Authentication */
-  ip?: InputMaybe<IpMutualTlsInput>;
+  ip?: InputMaybe<IpMutualTlsCreateInput>;
   /** The client certificate that must be used to authenticate the client. */
   pinned_certificate?: InputMaybe<PinnedCertificateInput>;
+  /** The client certificate that must be used to authenticate the client. */
+  pinned_certificate_pem?: InputMaybe<PinnedCertificatePemInput>;
   /**
    * The CA's that can be the issuer of the client certificate that can be accepted
    * to authenticate this client.
@@ -1427,7 +1628,31 @@ export type MutualTlsInput = {
    */
   trusted_cas?: InputMaybe<Array<Scalars['String']['input']>>;
   /** URI Mutual TLS Authentication */
-  uri?: InputMaybe<UriMutualTlsInput>;
+  uri?: InputMaybe<UriMutualTlsCreateInput>;
+};
+
+/** This is an union type. Only one of the fields must be set. */
+export type MutualTlsUpdateInput = {
+  /** DN Mutual TLS Authentication */
+  dn?: InputMaybe<DnMutualTlsUpdateInput>;
+  /** DNs Mutual TLS Authentication */
+  dns?: InputMaybe<DnsMutualTlsUpdateInput>;
+  /** Email Mutual TLS Authentication */
+  email?: InputMaybe<EmailMutualTlsUpdateInput>;
+  /** IP Mutual TLS Authentication */
+  ip?: InputMaybe<IpMutualTlsUpdateInput>;
+  /** The client certificate that must be used to authenticate the client. */
+  pinned_certificate?: InputMaybe<PinnedCertificateInput>;
+  /** The client certificate that must be used to authenticate the client. */
+  pinned_certificate_pem?: InputMaybe<PinnedCertificatePemInput>;
+  /**
+   * The CA's that can be the issuer of the client certificate that can be accepted
+   * to authenticate this client.
+   * If empty, then all profile certificates may be used to authenticate the client.
+   */
+  trusted_cas?: InputMaybe<Array<Scalars['String']['input']>>;
+  /** URI Mutual TLS Authentication */
+  uri?: InputMaybe<UriMutualTlsUpdateInput>;
 };
 
 /** Enable client authentication through direct mutual-tls. */
@@ -1451,14 +1676,20 @@ export type NameAndCa = {
   trusted_cas: Array<Scalars['String']['output']>;
 };
 
-/** Disable client attestation */
+/**
+ * Disable client attestation.
+ * This is equivalent to `allow-without-attestation=true` for configuration clients.
+ */
 export type NoAttestation = {
   __typename?: 'NoAttestation';
   /** Type of client attestation */
   type: Disable;
 };
 
-/** No attestation. */
+/**
+ * No attestation.
+ * The client will not need to perform client attestation, but it must authenticate instead.
+ */
 export type NoAttestationInput = {
   /** Type of no attestation. */
   type: Disable;
@@ -1482,6 +1713,33 @@ export type NoAuthentication = {
   no_authentication: NoAuth;
 };
 
+/** Token exchange capability type */
+export enum OAuthTokenExchange {
+  /** OAuth Token exchange capability type */
+  OauthTokenExchange = 'OAUTH_TOKEN_EXCHANGE'
+}
+
+/**
+ * Allows the client to use exchange tokens for other tokens (as per https://datatracker.ietf.org/doc/html/rfc8693).
+ *
+ * When enabled, the client must NOT set `client_authentication` to `NoAuthentication`.
+ */
+export type OAuthTokenExchangeCapability = {
+  __typename?: 'OAuthTokenExchangeCapability';
+  /** Type of the token exchange capability */
+  type: OAuthTokenExchange;
+};
+
+/**
+ * Allows the client to exchange tokens for other tokens (as per https://datatracker.ietf.org/doc/html/rfc8693).
+ *
+ * When enabled, the client must NOT set `client_authentication` to `NoAuthentication`.
+ */
+export type OAuthTokenExchangeCapabilityInput = {
+  /** Type of the token exchange capability */
+  type?: InputMaybe<OAuthTokenExchange>;
+};
+
 /** Information about pagination in a connection */
 export type PageInfo = {
   __typename?: 'PageInfo';
@@ -1498,10 +1756,23 @@ export type PinnedCertificate = {
   client_certificate_id: Scalars['String']['output'];
 };
 
-/** Pinned Certificate Mutual TLS Authentication */
+/** Reference to Pinned Certificate Mutual TLS Authentication */
 export type PinnedCertificateInput = {
   /** The ID of a client certificate that must be used to authenticate the client. */
   client_certificate_id: Scalars['String']['input'];
+};
+
+/** Pinned Certificate Mutual TLS Authentication present in PEM format */
+export type PinnedCertificatePem = {
+  __typename?: 'PinnedCertificatePem';
+  /** The client certificate that must be used to authenticate the client in PEM format. */
+  client_certificate_pem: Scalars['String']['output'];
+};
+
+/** Pinned Certificate Mutual TLS Authentication in PEM format */
+export type PinnedCertificatePemInput = {
+  /** The client certificate that must be used to authenticate the client in PEM format */
+  client_certificate_pem: Scalars['String']['input'];
 };
 
 /**
@@ -1536,7 +1807,7 @@ export type ProofKeyInput = {
    * Enforces this client to provide a proof key challenge and -verifier when performing
    * the Authorization Code Grant flow.
    */
-  require_proof_key: Scalars['Boolean']['input'];
+  require_proof_key?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 /** Query definitions. */
@@ -1550,6 +1821,13 @@ export type Query = {
    * Only clients satisfying ALL provided arguments will be returned.
    */
   databaseClients: DatabaseClientConnection;
+  /**
+   * Search for database clients using provided search term or terms.
+   * When multiple terms are provided, they must be space separated.
+   * To match the filter, all terms must be found in the client ID, or all be found in client name.
+   * Database clients matching a subset of the terms in client ID, and other terms in the client name are not returned.
+   */
+  searchDatabaseClients: DatabaseClientConnection;
 };
 
 
@@ -1567,6 +1845,16 @@ export type QueryDatabaseClientsArgs = {
   first?: InputMaybe<Scalars['Int']['input']>;
   sorting?: InputMaybe<DatabaseClientSorting>;
   tags?: InputMaybe<Array<Scalars['String']['input']>>;
+};
+
+
+/** Query definitions. */
+export type QuerySearchDatabaseClientsArgs = {
+  activeClientsOnly?: InputMaybe<Scalars['Boolean']['input']>;
+  after?: InputMaybe<Scalars['String']['input']>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  searchTerms?: InputMaybe<Scalars['String']['input']>;
+  sorting?: InputMaybe<DatabaseClientSorting>;
 };
 
 /** Configuration of refresh tokens. */
@@ -1598,7 +1886,7 @@ export type RefreshTokenInput = {
    */
   refresh_token_max_rolling_lifetime?: InputMaybe<Scalars['Long']['input']>;
   /** The Time To Live for a Refresh token. */
-  refresh_token_ttl: Scalars['Long']['input'];
+  refresh_token_ttl?: InputMaybe<Scalars['Long']['input']>;
   /**
    * Defines if refresh tokens are created on every refresh or if they are kept.
    * When set, this takes precedence over profile setting (reuse-refresh-tokens),
@@ -1616,7 +1904,7 @@ export type RequestObject = {
    * Enabling unsigned request objects requires the 'none' algorithm to be in the profile's
    * request object allowed algorithms.
    */
-  allow_unsigned_for_by_value?: Maybe<Scalars['Boolean']['output']>;
+  allow_unsigned_for_by_value: Scalars['Boolean']['output'];
   /** Enable the use of request object that are sent by-reference using the request_uri parameter. */
   by_reference?: Maybe<ByRefRequestObject>;
   /**
@@ -1747,7 +2035,9 @@ export enum SortAttribute {
   /** Created. */
   Created = 'created',
   /** Last modified. */
-  LastModified = 'lastModified'
+  LastModified = 'lastModified',
+  /** Sort by resource name. Which field is used for sorting depends on the resource type. */
+  Name = 'name'
 }
 
 /** Sort order. */
@@ -1761,7 +2051,7 @@ export enum SortOrder {
 /** Sorting. */
 export type Sorting = {
   /** Sort by attribute. */
-  sortBy: SortAttribute;
+  sortBy?: InputMaybe<SortAttribute>;
   /** Sort order. */
   sortOrder: SortOrder;
 };
@@ -1809,7 +2099,7 @@ export type SymmetricKeyInput = {
 
 /** Token exchange capability type */
 export enum TokenExchange {
-  /** Token exchange capability type */
+  /** Custom Token exchange capability type */
   TokenExchange = 'TOKEN_EXCHANGE'
 }
 
@@ -1825,13 +2115,13 @@ export type TokenExchangeCapability = {
 };
 
 /**
- * Allows the client to use exchange tokens for other tokens.
+ * Allows the client to exchange tokens for other tokens.
  *
  * When enabled, the client must NOT set `client_authentication` to `NoAuthentication`.
  */
 export type TokenExchangeCapabilityInput = {
   /** Type of the token exchange capability */
-  type: TokenExchange;
+  type?: InputMaybe<TokenExchange>;
 };
 
 /** Trusted CA (only) Mutual TLS Authentication */
@@ -1869,14 +2159,25 @@ export type UriMutualTls = NameAndCa & {
 };
 
 /** URI Mutual TLS Authentication */
-export type UriMutualTlsInput = {
+export type UriMutualTlsCreateInput = {
   /**
    * The expected uniformResourceIdentifier SAN entry in the certificate
    * that the client must identify with.
    */
   client_uri: Scalars['String']['input'];
   /** The CAs trusted by this client. If empty, all of the CAs configured in the server are used. */
-  trusted_cas: Array<Scalars['String']['input']>;
+  trusted_cas?: InputMaybe<Array<Scalars['String']['input']>>;
+};
+
+/** URI Mutual TLS Authentication */
+export type UriMutualTlsUpdateInput = {
+  /**
+   * The expected uniformResourceIdentifier SAN entry in the certificate
+   * that the client must identify with.
+   */
+  client_uri?: InputMaybe<Scalars['String']['input']>;
+  /** The CAs trusted by this client. If empty, all of the CAs configured in the server are used. */
+  trusted_cas?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
 /** User authentication configuration */
@@ -1904,7 +2205,7 @@ export type UserAuthentication = {
   /** Information that will be displayed to the user when authenticating the client */
   context_info: Scalars['String']['output'];
   /** Whether user authentication is forced at all times. */
-  force_authentication?: Maybe<Scalars['Boolean']['output']>;
+  force_authentication: Scalars['Boolean']['output'];
   /** Optional maximum age in seconds after which re-authentication must take place. */
   freshness?: Maybe<Scalars['Long']['output']>;
   /**
@@ -1947,7 +2248,7 @@ export type UserAuthenticationInput = {
    */
   consent?: InputMaybe<ConsentInput>;
   /** Information that will be displayed to the user when authenticating the client */
-  context_info: Scalars['String']['input'];
+  context_info?: InputMaybe<Scalars['String']['input']>;
   /** Optional default setting whether user authentication is forced at all times. */
   force_authentication?: InputMaybe<Scalars['Boolean']['input']>;
   /** Optional maximum age in seconds after which re-authentication must take place. */
@@ -1997,6 +2298,11 @@ export enum Web {
 /** Web client attestation configuration */
 export type WebAttestation = {
   __typename?: 'WebAttestation';
+  /**
+   * Whether to disable attestation validation.
+   * This is a debug-only option and must not be used in production environments.
+   */
+  disable_validation: Scalars['Boolean']['output'];
   /** Attestation policy ID */
   policy_id?: Maybe<Scalars['String']['output']>;
   /** Type of client attestation */
@@ -2005,8 +2311,13 @@ export type WebAttestation = {
 
 /** Web client attestation configuration */
 export type WebAttestationInput = {
+  /**
+   * Whether to disable attestation validation.
+   * This is a debug-only option and must not be used in production environments.
+   */
+  disable_validation?: InputMaybe<Scalars['Boolean']['input']>;
   /** Attestation policy ID */
   policy_id?: InputMaybe<Scalars['String']['input']>;
   /** Type of client attestation */
-  type: Web;
+  type?: InputMaybe<Web>;
 };

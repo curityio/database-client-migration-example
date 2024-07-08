@@ -31,6 +31,7 @@ export interface Environment {
     migrationClientScope: string;
     migrationTag: string;
     deleteMigratedClients: boolean;
+    numClients: string;
 }
 
 /*
@@ -49,6 +50,7 @@ export function getEnvironment(): Environment {
         migrationClientScope: getEnvironmentVariable("MIGRATION_CLIENT_SCOPE"),
         migrationTag: getEnvironmentVariable("MIGRATION_TAG"),
         deleteMigratedClients: getEnvironmentVariable("DELETE_MIGRATED_CLIENTS") === 'true',
+        numClients: getEnvironmentVariable('MAX_CLIENTS'),
     };
 }
 

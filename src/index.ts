@@ -18,7 +18,7 @@ import {ClientMapper} from './data/clientMapper.js'
 import {getEnvironment, isClientToMigrate} from './environment.js'
 import {RestconfClient} from './restconfClient.js'
 import {GraphqlClient} from './graphqlClient.js'
-import { MigratedClient } from './migratedClient.js';
+import {MigratedClient} from './migratedClient.js';
 
 console.log('Preparing environment ...');
 const environment = getEnvironment();

@@ -21,6 +21,12 @@
           <database-client>
               <!-- Change this ID if importing settings into a test system, eg to a value like DefaultHSQLDB -->
               <client-data-source>default-datasource</client-data-source>
+              <client-tags>
+                <client-tag>
+                  <tag>migrated-from-config</tag>
+                  <description>Indicates that the client originated from configuration</description>
+                </client-tag>
+              </client-tags>
           </database-client>
           <scopes>
             <scope>
@@ -67,7 +73,7 @@
               <access-operation>read</access-operation>
               <access-operation>update</access-operation>
               <access-operation>delete</access-operation>
-              <attribute>dbClient.*</attribute>
+              <attribute>dbClient</attribute>
               <decision>allow</decision>
             </rule>
             <select-rule-list-when>

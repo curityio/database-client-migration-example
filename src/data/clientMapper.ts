@@ -26,8 +26,8 @@ import {
     AsymmetricKeyManagementAlgorithm,
     BackchannelAuthentication,
     CapabilitiesInput,
-    ClientAuthenticationInput,
-    ClientAuthenticationVerifierInput,
+    ClientAuthenticationCreateInput,
+    ClientAuthenticationVerifierCreateInput,
     ClientCredentials,
     Code,
     ContentEncryptionAlgorithm,
@@ -35,7 +35,7 @@ import {
     DatabaseClientStatus,
     Disable,
     Haapi,
-    IdTokenInput,
+    IdTokenCreateInput,
     Implicit,
     Introspection,
     Ios,
@@ -282,17 +282,17 @@ export class ClientMapper {
         return capabilities;
     }
 
-    private getClientAuthentication(configClient: ConfigurationClient): ClientAuthenticationInput {
+    private getClientAuthentication(configClient: ConfigurationClient): ClientAuthenticationCreateInput {
 
-        const secondary = configClient['secondary-authentication-method']
+        const secondary = configClient['secondary-authentication-method'];
         return {
             primary: this.getPrimaryClientAuthentication(configClient),
             secondary: this.getSecondaryClientAuthentication(configClient),
-            secondary_verifier_expiration: secondary?.['expires-on'] ? Date.parse(secondary['expires-on']) / 1000.0 : null,
+            secondary_verifier_expiration: secondary?.['expires-on'] ? Math.floor(Date.parse(secondary['expires-on']) / 1000.0) : null,
         };
     }
 
-    private getPrimaryClientAuthentication(configClient: ConfigurationClient): ClientAuthenticationVerifierInput {
+    private getPrimaryClientAuthentication(configClient: ConfigurationClient): ClientAuthenticationVerifierCreateInput {
 
         if (configClient['asymmetric-key']) {
 
@@ -318,7 +318,7 @@ export class ClientMapper {
                 },
             };
 
-        } else if (configClient['no-authentication'] || configClient.capabilities['assisted-token']) {
+        } else if (configClient['no-authentication'] || configClient.capabilities['implicit'] || configClient.capabilities['assisted-token']) {
 
             return {
                 no_authentication: NoAuth.NoAuth,
@@ -331,7 +331,7 @@ export class ClientMapper {
         }
     }
 
-    private getSecondaryClientAuthentication(configClient: ConfigurationClient): ClientAuthenticationVerifierInput | null {
+    private getSecondaryClientAuthentication(configClient: ConfigurationClient): ClientAuthenticationVerifierCreateInput | null {
 
         const secondary = configClient['secondary-authentication-method']
         if (secondary) {
@@ -394,7 +394,7 @@ export class ClientMapper {
         }
     }
 
-    private getIdToken(configClient: ConfigurationClient): IdTokenInput | null {
+    private getIdToken(configClient: ConfigurationClient): IdTokenCreateInput | null {
 
         const idTokenTtl = configClient['id-token-ttl'];
         const idTokenEncryption = configClient['id-token-encryption'];
@@ -402,7 +402,7 @@ export class ClientMapper {
             return null;
         }
 
-        let idToken: IdTokenInput = {};
+        let idToken: IdTokenCreateInput = {};
         if (idTokenTtl) {
             idToken.id_token_ttl = idTokenTtl;
         }
